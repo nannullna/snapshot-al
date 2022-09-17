@@ -1,0 +1,10 @@
+matplotlib
+numpy
+pandas
+scikit-learn
+toma
+toml
+torch==1.8.2
+torchaudio
+torchvision
+tqdm
