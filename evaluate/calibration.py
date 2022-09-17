@@ -1,54 +1,35 @@
 from typing import Dict, Union
 import numpy as np
+import matplotlib.pyplot as plt
 
+def ece_loss(probs: np.ndarray, targets: np.ndarray, n_bins: int=10, return_dict=False):
 
-def ece(y_hat: np.ndarray, y_true: np.ndarray, n_bins: int=10, return_dict: bool=False) -> Union[float, Dict]:
-    """Calculates expected calibration error (ECE).
-    
-    Args:
-
-        y_hat: np.ndarray -- softmax value (probabiltiy) of shape N-by-C (C: # of classes)
-
-        y_true: np.ndarray -- target of shape N or N-by-C (one-hot vector)
-    
-    """
-    if len(y_hat) != len(y_true):
-        raise ValueError(f"Length of y_pred {len(y_pred)} and y_true {len(y_true)} do not match.")
-
-    if y_true.ndim == 2 and y_true.shape(1) == 1:
-        y_true.squeeze(1)
-    elif y_true.ndim == 2 and y_true.shape(1) > 1:
-        y_true = y_true.argmax(axis=1) # assumed to be an one-hot vector.
+    preds = np.argmax(probs, axis=-1)
+    confs = np.take_along_axis(probs, np.expand_dims(preds, axis=-1), axis=-1).squeeze(1)
 
     bins = np.linspace(0.0, 1.0, n_bins+1)
-    accs, confs, Bm = np.zeros(n_bins), np.zeros(n_bins), np.zeros(n_bins)
+    inds = np.digitize(confs, bins, right=True)
 
-    y_pred = y_hat.argmax(axis=1)
-    all_conf = y_hat.max(axis=1)
+    ece = 0.0
+    results = []
 
-    for i, (start, end) in enumerate(zip(bins[:-1], bins[1:])):
-        mask = (all_conf > start) & (all_conf <= end)
-        Bm[i] = mask.sum()
-        if Bm[i] == 0:
-            # no example in the bin
-            continue
-
-        _pred = y_pred[mask]
-        _conf = all_conf[mask]
-        _true = y_true[mask]
+    for idx in range(1, n_bins+1):
+        mask = (inds == idx)
+        if np.sum(mask) == 0:
+            weight = 0.0
+            accuracy = 0.0
+            confidence = 0.0
         
-        accs[i] = (_pred == _true).mean()
-        confs[i] = _conf.mean()
-
-    Bm = Bm / len(y_true)
-    ece = (Bm * np.abs(accs - confs)).sum()
+        else:
+            weight = np.sum(mask) / len(mask)
+            accuracy = np.sum(preds[mask] == targets[mask]) / np.sum(mask)
+            confidence = np.mean(confs[mask])
+        
+        ece += weight * abs(accuracy - confidence)
+        results.append({"bin_start": bins[idx-1], "bin_end": bins[idx], "weight": weight, "accuracy": accuracy, "confidence": confidence})
 
     if return_dict:
-        return ece, {
-            "n": Bm,
-            "accs": accs,
-            "confs": confs
-        }
+        return ece, results
     else:
         return ece
 
@@ -62,10 +43,54 @@ def nll(y_hat: np.ndarray, y_true: np.ndarray) -> float:
     return nll
 
 
-def draw_reliability_plot(y_hat: np.ndarray, y_true: np.ndarray, n_bins: int=10, dpi: int=72, figsize=None):
-    import matplotlib.pyplot as plt
+def draw_ece_plot(probs, targets, n_bins: int=10, figsize=(3, 3), dpi=150) -> plt.Figure:
 
-    fig, ax = plt.subplots(1, 1, dpi=dpi, figsize=figsize)
+    ece, results = ece_loss(probs, targets, n_bins, return_dict=True)
 
-    pass
+    x1 = [item['bin_start'] for item in results] #left edge
+    x2 = [item['bin_end'] for item in results] #right edge
+    y1 = [item['accuracy'] for item in results]
+    y2 = [item['confidence'] for item in results]
+    w = np.array(x2) - np.array(x1)
 
+    fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    fig.patch.set_facecolor((1.0, 1.0, 1.0, 1.0))
+
+    ax.plot([0.0, 1.0], [0.0, 1.0], ls='--', lw=2, c="#666666")
+    ax.bar(x1, y2, width=w, align='edge', label="Expected", facecolor=(1, 0, 0.5, 0.2), edgecolor=(1, 0, 0.5, 1), lw=2, alpha=0.5)
+    ax.bar(x1, y1, width=w, align='edge', label="Outputs", facecolor=(0, 0, 1, 1), edgecolor=(0, 0, 0, 1), lw=2, alpha=0.5)
+
+    ax.text(0.9, 0.1, f"Error={ece*100:.1f}", fontsize=15, horizontalalignment='right', verticalalignment='bottom', bbox=dict(facecolor='white', alpha=0.7))
+
+    ax.set_xlim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.0)
+    ax.set_xlabel("Confidence")
+    ax.set_ylabel("Accuracy")
+
+    ax.legend()
+    return fig
+
+
+def draw_confidence_plot(probs, accuracy=None, n_bins:int = 20) -> plt.Figure:
+    
+    bins = np.linspace(0.0, 1.0, n_bins+1)
+    avg_confidence = np.mean(probs)
+
+    fig, ax = plt.subplots(1, 1, figsize=(3, 3), dpi=150)
+    fig.patch.set_facecolor((1.0, 1.0, 1.0, 1.0))
+
+    ax.hist(probs, bins=bins, weights=np.ones(len(probs))/len(probs), facecolor=(0, 0, 1, 1), edgecolor=(0, 0, 0, 1), lw=2)
+
+    ax.plot([avg_confidence, avg_confidence], [0.0, 1.0], ls='--', lw=2, c="#666666")
+    ax.text(avg_confidence-0.05, 0.5, "Avg. Confidence", rotation='vertical', horizontalalignment='right', verticalalignment='bottom', fontsize=10, color=(1, 0, 0.5), bbox=dict(facecolor='white', alpha=0.7))
+
+    if accuracy is not None:
+        ax.plot([accuracy, accuracy], [0.0, 1.0], ls='--', lw=2, c="#666666")
+        ax.text(accuracy-0.05, 0.5-0.1, "Accuracy", rotation='vertical', horizontalalignment='right', verticalalignment='top', fontsize=10, color=(0, 0, 1), bbox=dict(facecolor='white', alpha=0.7))
+
+    ax.set_xlim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.0)
+    ax.set_xlabel("Confidence")
+    ax.set_ylabel("% of Samples")
+
+    return fig
