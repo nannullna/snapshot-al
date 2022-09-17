@@ -1,5 +1,8 @@
 from typing import List, Optional, Tuple, Dict
 import os
+import sys
+sys.path.append('.')
+sys.path.append('..')
 from glob import glob
 
 import argparse

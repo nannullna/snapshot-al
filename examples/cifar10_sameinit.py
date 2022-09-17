@@ -1,7 +1,10 @@
+from typing import Tuple, Dict, List, Optional
 import os
+import sys
+sys.path.append('.')
+sys.path.append('..')
 from glob import glob
 
-from typing import Tuple, Dict, List, Optional
 import argparse
 import json
 from datetime import datetime
