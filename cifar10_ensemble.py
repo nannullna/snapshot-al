@@ -1,7 +1,7 @@
-from typing import List, Optional, Tuple, Dict
 import os
 from glob import glob
 
+from typing import Tuple, Dict, List, Optional
 import argparse
 import json
 from datetime import datetime
@@ -12,8 +12,7 @@ from sklearn.metrics import accuracy_score
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import OneCycleLR, LambdaLR, CosineAnnealingWarmRestarts
-from torch.optim.swa_utils import AveragedModel, SWALR, update_bn
+from torch.optim.lr_scheduler import OneCycleLR, LambdaLR
 from torch.utils.data import DataLoader
 
 import torchvision.transforms as T
@@ -29,22 +28,22 @@ from arguments import *
 
 
 def create_and_parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser("CIFAR10-SWA")
+
+    parser = argparse.ArgumentParser("CIFAR10-ENSEMBLE")
 
     parser.add_argument('-f', '--file', type=str, required=False)
 
-    parser.add_argument('--run_name',     type=str, default='cifar10-swa')
+    parser.add_argument('--run_name',     type=str, default='cifar10-ensemble')
     parser.add_argument('--project',      type=str, default='al_swa')
     parser.add_argument('--save_path',    type=str, default='saved/')
     parser.add_argument('--dataset_path', type=str, default='datasets/cifar10')
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--arch', type=str, default='resnet18', choices=["resnet18", "resnet50", "vgg16"])
-
+    parser.add_argument('--arch', type=str, default="resnet18", choices=["resnet18", "resnet50", "vgg16"])
+    
     parser.add_argument('--disable_tqdm', action='store_true')
     parser.add_argument('--resume_from', type=str, required=None, help='Resume AL from the saved path.')
 
     parser = add_training_args(parser)
-    parser = add_swa_args(parser)
     parser = add_query_args(parser)
 
     args = parser.parse_args()
@@ -53,14 +52,14 @@ def create_and_parse_args() -> argparse.Namespace:
 
 
 def init_model_and_optimizer(config, num_classes:int=10) -> Tuple[nn.Module, optim.Optimizer]:
-    """Initializes a model for CIFAR10, CIFAR100 and creates its optimizer."""
+
     if config.arch == "resnet18":
         model = resnet18(pretrained=False, num_classes=num_classes)
         model.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
         model.maxpool = nn.Identity()
     elif config.arch == "resnet50":
         model = resnet50(pretrained=False, num_classes=num_classes)
-        model.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
+        model.conv1 = nn.Conv2d(3, 64, 1, 1)
         model.maxpool = nn.Identity()
     elif config.arch == "vgg16":
         model = vgg16_bn(pretrained=False)
@@ -179,7 +178,7 @@ def predict(model: nn.Module, dataloader: DataLoader, device: Optional[torch.dev
     }
 
 
-def test_ensemble(checkpoints: List[str], targets: List[int], model: nn.Module, dataloader: DataLoader, device: torch.device) -> Tuple[float, float]:
+def test_ensemble(checkpoints: List[str], targets: List[int], model: nn.Module, dataloader: DataLoader, device: Optional[torch.device]=None):
 
     all_logits = []
     accs = []
@@ -196,29 +195,12 @@ def test_ensemble(checkpoints: List[str], targets: List[int], model: nn.Module, 
 
     all_logits = torch.cat(all_logits, dim=1)
     ens_logits = torch.mean(all_logits, dim=1)
-    ens_preds = torch.argmax(ens_logits, dim=-1).numpy()
+    ens_preds  = torch.argmax(ens_logits, dim=-1).numpy()
 
-    ens_acc = accuracy_score(ens_preds, np.asarray(targets))
-    mean_acc = np.mean(accs)
+    ens_acc    = accuracy_score(ens_preds, np.asarray(targets))
+    mean_acc   = np.mean(accs)
 
     return ens_acc, mean_acc
-
-
-def create_swa_model_and_scheduler(config, model: nn.Module, optimizer: optim.Optimizer, save_interval: int) -> Tuple[AveragedModel, LambdaLR]:
-    swa_model = AveragedModel(model)
-
-    if config.swa_scheduler_type == "constant":
-        swa_scheduler = SWALR(optimizer, swa_lr=config.learning_rate*config.swa_lr_multiplier, anneal_epochs=config.swa_anneal_epochs, anneal_strategy="cos")
-    elif config.swa_scheduler_type == "cosine":
-        swa_scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=save_interval, T_mult=1, eta_min=1e-5)
-        swa_scheduler.base_lrs = [config.swa_lr_multiplier*config.learning_rate \
-            for base_lr in swa_scheduler.base_lrs]
-    elif config.swa_scheduler_tyhpe == "none":
-        swa_scheduler = LambdaLR(optimizer, lambda epoch: 1)
-    else:
-        raise ValueError
-
-    return swa_model, swa_scheduler
 
 
 def main(config):
@@ -302,62 +284,42 @@ def main(config):
     
     sampler = NAME_TO_CLS[config.query_type](model=None, pool=pool, size=config.query_size, device=device)
 
-    save_interval = (config.num_epochs - config.swa_start) // config.num_ensembles
-    save_at = [config.num_epochs - i*save_interval for i in range(config.num_ensembles)][::-1]
-    print(f"Total of {len(save_at)} models expected at {save_at}.")
-
     for episode in range(last_episode+1, config.num_episodes+1):
 
         checkpoints: List[str] = []
 
         episode_save_path = os.path.join(config.save_path, f"episode_{episode}")
         os.makedirs(episode_save_path)
-        
-        model, optimizer = init_model_and_optimizer(config, num_classes=10)
-        scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=True)))
-        swa_model, swa_scheduler = create_swa_model_and_scheduler(config, model, optimizer, save_interval)
 
-        sampler.update_model(model) # this updates the reference to the model.
-        model.to(device)
+        for ens in range(config.num_ensembles):
+            model, optimizer = init_model_and_optimizer(config, num_classes=10)
+            scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=True)))
 
-        tbar = trange(1, config.num_epochs+1, disable=config.disable_tqdm)
-        max_acc = 0.0
+            sampler.update_model(model) # this updates the reference to the model.
+            model.to(device)
+            
+            tbar = trange(1, config.num_epochs+1, disable=config.disable_tqdm)
+            max_acc, eval_acc = 0.0, 0.0
 
-        for epoch in tbar:
-
-            model.train()
-            train_loss = train_epoch(model, pool.get_labeled_dataloader(drop_last=True), optimizer, scheduler if epoch <= config.swa_start else None, device)
-
-            if epoch > config.swa_start:
-                swa_model.update_parameters(model)
-                swa_scheduler.step()
+            for epoch in tbar:
+                model.train()
+                train_loss = train_epoch(model, pool.get_labeled_dataloader(), optimizer, scheduler, device)
                 
-                if epoch in save_at:
-                    ckpt_file_name = os.path.join(episode_save_path, f"epoch_{epoch}.ckpt")
-                    torch.save({"state_dict": model.state_dict()}, ckpt_file_name)
-                    checkpoints.append(ckpt_file_name)
+                if epoch % config.eval_every == 0:
+                    model.eval()
+                    eval_acc = eval(model, pool.get_eval_dataloader(), device)
 
-            if epoch % config.eval_every == 0:
-                model.eval()
-                eval_acc, _ = eval(model, pool.get_eval_dataloader(), device)
-                if eval_acc > max_acc:
-                    max_acc = eval_acc
-                tbar.set_description(f"train loss {train_loss:.3f}, eval acc {eval_acc*100:.2f}")
+                tbar.set_description(f"train loss {train_loss():.3f}, eval acc {eval_acc*100:.2f}")
 
-        swa_model.to(device)
-        update_bn(pool.get_labeled_dataloader(drop_last=False), swa_model, device)
-        swa_ckpt_name = os.path.join(episode_save_path, f"swa_model.ckpt")
-        torch.save({"state_dict": swa_model.state_dict()}, swa_ckpt_name)
-
-        swa_model.eval()
-        swa_acc, _ = eval(swa_model, pool.get_test_dataloader(), device)
-        print(f"Episode {episode} num_models: {len(checkpoints)} -- max eval acc: {max_acc*100:.2f}, test acc: {swa_acc*100:.2f}")
-
+            ckpt_file = os.path.join(episode_save_path, f"member_{ens}.ckpt")
+            torch.save({"state_dict": model.state_dict()}, ckpt_file)
+            checkpoints.append(ckpt_file)
+        
         ens_acc, mean_acc = test_ensemble(checkpoints, test_set.targets, model, pool.get_test_dataloader(), device)
-        print(f"ens acc: {ens_acc*100:.2f}, mean acc: {mean_acc*100:.2f}")
+        print(f"Episode {episode} num_models: {len(checkpoints)} -- max eval acc: {max_acc*100:.2f}, test ens_acc: {ens_acc*100:.2f}, mean_acc: {mean_acc*100:.2f}")
 
-        query_result = sampler(checkpoints=checkpoints, swa_checkpoint=swa_ckpt_name)
-        queried_ids  = pool.convert_to_original_ids(query_result.indices)
+        query_result = sampler(checkpoints=checkpoints)
+        queried_ids = pool.convert_to_original_ids(query_result.indices)
         write_json(queried_ids, os.path.join(episode_save_path, f"queried_ids.json"))
 
         metrics = {
@@ -365,7 +327,6 @@ def main(config):
             "num_ensembles": len(checkpoints),
             "eval/acc": eval_acc,
             "eval/max_acc": max_acc,
-            "test/swa_acc": swa_acc,
             "test/ens_acc": ens_acc,
             "test/mean_acc": mean_acc,
             "episode/indicies": queried_ids,
@@ -373,15 +334,15 @@ def main(config):
             "episode/num_labeled": len(pool.get_labeled_ids()),
         }
         pool.update(query_result)
-        
+
         write_json(metrics, os.path.join(episode_save_path, f"result.json"))
         episode_results.append(metrics)
 
         write_json(episode_results, os.path.join(config.save_path, "results.json"))
-    
+
 
 if __name__ == '__main__':
-    
+
     args = create_and_parse_args()
 
     if args.file is not None:
