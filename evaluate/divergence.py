@@ -1,7 +1,10 @@
 import numpy as np
 
 
-def kl_divergence(p: np.ndarray, q: np.ndarray, log_p: bool=False):
+def kld(p: np.ndarray, q: np.ndarray, log_p: bool=False) -> np.ndarray:
+    """Measures kl-divergence between p and q.
+    p and q must be in the same shape of (N, C), 
+    and it returns kl-divergences of shape (N,)"""
     if log_p:
         scores = np.exp(p) * (p - q)
     else:
@@ -9,3 +12,8 @@ def kl_divergence(p: np.ndarray, q: np.ndarray, log_p: bool=False):
     scores = scores.sum(axis=-1)
 
     return scores
+
+
+def symmetric_kld(p: np.ndarray, q: np.ndarray, log_p: bool=False) -> np.ndarray:
+    """Measures symmetric kl-divergence between p and q."""
+    return 0.5 * (kld(p, q, log_p) + kld(q, p, log_p))
