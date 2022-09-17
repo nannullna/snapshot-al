@@ -18,3 +18,5 @@ NAME_TO_CLS = {
     "stconal": EnsembleStConal,
     "maxentropy": EnsembleMaxEntropy,
 }
+
+ALL_METHODS = list(NAME_TO_CLS.keys())

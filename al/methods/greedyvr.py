@@ -8,8 +8,8 @@ import torch.nn.functional as F
 from tqdm.auto import tqdm, trange
 
 from .ensemble import EnsembleQuery
-from ...pool import ActivePool
-from ...query import QueryResult
+from ..pool import ActivePool
+from ..query import QueryResult
 
 class EnsembleGreedyVR(EnsembleQuery):
 

@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from acl.al.result import QueryResult
+from .result import QueryResult
 
 from .pool import ActivePool
 

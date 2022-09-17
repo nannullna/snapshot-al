@@ -7,7 +7,7 @@ import torch
 
 from tqdm import tqdm
 
-from ...query import ActiveQuery, QueryResult
+from ..query import ActiveQuery, QueryResult
 
 class EnsembleQuery(ActiveQuery):
     """Base class of Ensemble-Based query strategies."""

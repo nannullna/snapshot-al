@@ -13,8 +13,8 @@ from toma import toma
 from tqdm.auto import tqdm, trange
 
 from .ensemble import EnsembleQuery
-from ...pool import ActivePool
-from ...query import QueryResult
+from ..pool import ActivePool
+from ..query import QueryResult
 
 
 def compute_conditional_entropy(log_probs_N_K_C: torch.Tensor) -> torch.Tensor:

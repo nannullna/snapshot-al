@@ -7,7 +7,7 @@ import warnings
 import numpy as np
 from torch.utils.data import Dataset, DataLoader, Subset
 
-from acl.al.result import QueryResult
+from .result import QueryResult
 
 class ActivePool:
     """Active pool that manages both an labeled and an unlabeled pool.
