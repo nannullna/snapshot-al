@@ -65,7 +65,9 @@ def create_active_pool(config) -> ActivePool:
     return pool
 
 
-def init_model_and_optimizer(config, num_classes:int=10) -> Tuple[nn.Module, optim.Optimizer]:
+def init_model_and_optimizer(config) -> Tuple[nn.Module, optim.Optimizer]:
+
+    num_classes = 10 if config.dataset_name == 'cifar10' else 100
 
     if config.arch == "resnet18":
         model = resnet18(pretrained=False, num_classes=num_classes)
