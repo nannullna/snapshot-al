@@ -15,6 +15,7 @@ def add_training_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParse
     training_args.add_argument('--lr_scheduler_type',  type=str,   default="none", 
         choices=["none", "onecycle", "exponential", "cosine"])
     training_args.add_argument('--lr_scheduler_param', type=float, default=10.0)
+    training_args.add_argument('--num_workers',        type=int, default=1)
 
     training_args.add_argument('--log_every',  type=float, default=10)
     training_args.add_argument('--eval_every', type=float, default=10)

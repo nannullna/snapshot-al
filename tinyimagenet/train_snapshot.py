@@ -174,7 +174,7 @@ def main(config):
         for epoch in tbar:
 
             model.train()
-            train_loss = train_epoch(model, pool.get_labeled_dataloader(drop_last=False, num_workers=4, pin_memory=True), optimizer, scheduler if epoch < config.swa_start else None, device)
+            train_loss = train_epoch(model, pool.get_labeled_dataloader(num_workers=config.num_workers, pin_memory=True), optimizer, scheduler if epoch < config.swa_start else None, device)
 
             if epoch > config.swa_start:
                 swa_model.update_parameters(model)
@@ -187,7 +187,7 @@ def main(config):
 
             if epoch % config.eval_every == 0:
                 model.eval()
-                eval_results = eval(model, pool.get_eval_dataloader(), device)
+                eval_results = eval(model, pool.get_eval_dataloader(num_workers=config.num_workers, pin_memory=True), device)
                 eval_acc = eval_results['acc']
                 if eval_acc > max_acc:
                     max_acc = eval_acc
@@ -199,11 +199,11 @@ def main(config):
         torch.save({"state_dict": swa_model.state_dict()}, swa_ckpt_name)
 
         swa_model.eval()
-        swa_results = eval(swa_model, pool.get_test_dataloader(), device)
+        swa_results = eval(swa_model, pool.get_test_dataloader(num_workers=config.num_workers, pin_memory=True), device)
         swa_acc = swa_results['acc']
         print(f"Episode {episode} num_models: {len(checkpoints)} -- max eval acc: {max_acc*100:.2f}, test acc: {swa_acc*100:.2f}")
 
-        ens_metrics = test_ensemble(checkpoints, model, pool.get_test_dataloader(), device)
+        ens_metrics = test_ensemble(checkpoints, model, pool.get_test_dataloader(num_workers=config.num_workers, pin_memory=True), device)
         print(f"ens acc: {ens_metrics['ens_acc']*100:.2f}, mean acc: {ens_metrics['mean_acc']*100:.2f}")
 
         query_result = sampler(checkpoints=checkpoints, swa_checkpoint=swa_ckpt_name)

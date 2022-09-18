@@ -160,11 +160,11 @@ def main(config):
 
             for epoch in tbar:
                 model.train()
-                train_loss = train_epoch(model, pool.get_labeled_dataloader(num_workers=4, pin_memory=True), optimizer, scheduler, device)
+                train_loss = train_epoch(model, pool.get_labeled_dataloader(num_workers=config.num_workers, pin_memory=True), optimizer, scheduler, device)
                 
                 if epoch % config.eval_every == 0:
                     model.eval()
-                    eval_results = eval(model, pool.get_eval_dataloader(), device)
+                    eval_results = eval(model, pool.get_eval_dataloader(num_workers=config.num_workers, pin_memory=True), device)
                     eval_acc = eval_results['acc']
 
                 tbar.set_description(f"train loss {train_loss:.3f}, eval acc {eval_acc*100:.2f}")
@@ -173,7 +173,7 @@ def main(config):
             torch.save({"state_dict": model.state_dict()}, ckpt_file)
             checkpoints.append(ckpt_file)
         
-        ens_metrics = test_ensemble(checkpoints, model, pool.get_test_dataloader(), device)
+        ens_metrics = test_ensemble(checkpoints, model, pool.get_test_dataloader(num_workers=config.num_workers, pin_memory=True), device)
         print(f"Episode {episode} num_models: {len(checkpoints)} -- max eval acc: {max_acc*100:.2f}, test ens_acc: {ens_metrics['ens_acc']*100:.2f}, mean_acc: {ens_metrics['mean_acc']*100:.2f}")
 
         query_result = sampler(checkpoints=checkpoints)
