@@ -162,7 +162,7 @@ def main(config):
         episode_save_path = os.path.join(config.save_path, f"episode_{episode}")
         os.makedirs(episode_save_path)
         
-        model, optimizer = init_model_and_optimizer(config, num_classes=10)
+        model, optimizer = init_model_and_optimizer(config)
         scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=False)))
         swa_model, swa_scheduler = create_swa_model_and_scheduler(config, model, optimizer, save_interval)
 
