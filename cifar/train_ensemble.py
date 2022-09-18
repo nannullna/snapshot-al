@@ -12,6 +12,8 @@ from datetime import datetime
 import numpy as np
 
 import torch
+import torch.optim as optim
+from torch.optim.lr_scheduler import LambdaLR, OneCycleLR
 
 from tqdm import trange
 
@@ -20,7 +22,7 @@ from utils import set_seed, write_json
 
 from arguments import *
 from commons import (
-    create_active_pool, init_model_and_optimizer, create_scheduler, \
+    create_active_pool, init_model_and_optimizer, \
     train_epoch, eval, predict, test_ensemble
 )
 
@@ -47,6 +49,22 @@ def create_and_parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     return args
+
+
+def create_scheduler(config, optimizer: optim.Optimizer, steps_per_epoch: int) -> LambdaLR:
+    if config.lr_scheduler_type == "onecycle":
+        scheduler = OneCycleLR(
+            optimizer,
+            config.learning_rate*config.lr_scheduler_param,
+            epochs=config.num_epochs,
+            steps_per_epoch=steps_per_epoch,
+        )
+    elif config.lr_scheduler_type == "none":
+        scheduler = LambdaLR(optimizer, lambda epoch: 1.0)
+    else:
+        raise ValueError
+
+    return scheduler
 
 
 def main(config):
@@ -122,7 +140,7 @@ def main(config):
 
         for ens in range(config.num_ensembles):
             model, optimizer = init_model_and_optimizer(config, num_classes=10)
-            scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=True)))
+            scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=False)))
 
             sampler.update_model(model) # this updates the reference to the model.
             model.to(device)
@@ -176,8 +194,7 @@ if __name__ == '__main__':
 
     if args.file is not None:
         with open(args.file, "r") as f:
-            args_dict = json.load(args.file)
-        args_dict.drop('file')
+            args_dict = json.load(f)
         args.__dict__.update(args_dict)
 
     print(vars(args))

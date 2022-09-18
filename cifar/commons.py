@@ -102,22 +102,6 @@ def init_model_and_optimizer(config, num_classes:int=10) -> Tuple[nn.Module, opt
     return model, optimizer
 
 
-def create_scheduler(config, optimizer: optim.Optimizer, steps_per_epoch: int) -> LambdaLR:
-    if config.lr_scheduler_type == "onecycle":
-        scheduler = OneCycleLR(
-            optimizer,
-            config.learning_rate*config.lr_scheduler_param,
-            epochs=config.num_epochs if not config.start_swa_at_end else config.swa_start,
-            steps_per_epoch=steps_per_epoch,
-        )
-    elif config.lr_scheduler_type == "none":
-        scheduler = LambdaLR(optimizer, lambda epoch: 1.0)
-    else:
-        raise ValueError
-
-    return scheduler
-
-
 def train_epoch(model: nn.Module, dataloader: DataLoader, optimizer: optim.Optimizer, lr_scheduler: Optional[LambdaLR]=None, device: Optional[torch.device]=None) -> float:
 
     train_loss = Tracker("train_loss")

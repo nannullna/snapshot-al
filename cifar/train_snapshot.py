@@ -25,9 +25,10 @@ from utils import set_seed, write_json
 
 from arguments import *
 from commons import (
-    create_active_pool, init_model_and_optimizer, create_scheduler, \
+    create_active_pool, init_model_and_optimizer, \
     train_epoch, eval, predict, test_ensemble
 )
+
 
 def create_and_parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser("CIFAR-Snapshot")
@@ -51,6 +52,22 @@ def create_and_parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     return args
+
+
+def create_scheduler(config, optimizer: optim.Optimizer, steps_per_epoch: int) -> LambdaLR:
+    if config.lr_scheduler_type == "onecycle":
+        scheduler = OneCycleLR(
+            optimizer,
+            config.learning_rate*config.lr_scheduler_param,
+            epochs=config.num_epochs if not config.start_swa_at_end else config.swa_start,
+            steps_per_epoch=steps_per_epoch,
+        )
+    elif config.lr_scheduler_type == "none":
+        scheduler = LambdaLR(optimizer, lambda epoch: 1.0)
+    else:
+        raise ValueError
+
+    return scheduler
 
 
 def create_swa_model_and_scheduler(config, model: nn.Module, optimizer: optim.Optimizer, save_interval: int) -> Tuple[AveragedModel, LambdaLR]:
@@ -146,7 +163,7 @@ def main(config):
         os.makedirs(episode_save_path)
         
         model, optimizer = init_model_and_optimizer(config, num_classes=10)
-        scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=True)))
+        scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=False)))
         swa_model, swa_scheduler = create_swa_model_and_scheduler(config, model, optimizer, save_interval)
 
         sampler.update_model(model) # this updates the reference to the model.
@@ -158,7 +175,7 @@ def main(config):
         for epoch in tbar:
 
             model.train()
-            train_loss = train_epoch(model, pool.get_labeled_dataloader(drop_last=True), optimizer, scheduler if epoch <= config.swa_start else None, device)
+            train_loss = train_epoch(model, pool.get_labeled_dataloader(drop_last=False), optimizer, scheduler if epoch < config.swa_start else None, device)
 
             if epoch > config.swa_start:
                 swa_model.update_parameters(model)
@@ -201,6 +218,8 @@ def main(config):
             "eval/acc": eval_acc,
             "eval/max_acc": max_acc,
             "test/swa_acc": swa_acc,
+            "test/swa_nll": swa_results['nll'],
+            "test/swa_ece": swa_results['ece'],
             "episode/indicies": queried_ids,
             "episode/scores": query_result.scores,
             "episode/num_labeled": len(pool.get_labeled_ids()),
@@ -219,8 +238,7 @@ if __name__ == '__main__':
 
     if args.file is not None:
         with open(args.file, "r") as f:
-            args_dict = json.load(args.file)
-        args_dict.drop('file')
+            args_dict = json.load(f)
         args.__dict__.update(args_dict)
 
     print(vars(args))
