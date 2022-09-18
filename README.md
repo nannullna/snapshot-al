@@ -25,11 +25,11 @@ python cifar/train_sameinit.py -f cifar/configs/cifar10_resnet18.json --query_ty
 Run experiments on CIFAR-100 dataset with ResNet-18. Specify an acquisition function with `--query_type` and acquisition size with `--query_size` argument.
 
 ```bash
-python cifar/train_snapshot.py -f cifar/configs/cifar10_resnet18.json --query_type vr --query_size 500
+python cifar/train_snapshot.py -f cifar/configs/cifar100_resnet18.json --query_type vr --query_size 500
 
-python cifar/train_ensemble.py -f cifar/configs/cifar10_resnet18.json --query_type vr --query_size 500
+python cifar/train_ensemble.py -f cifar/configs/cifar100_resnet18.json --query_type vr --query_size 500
 
-python cifar/train_sameinit.py -f cifar/configs/cifar10_resnet18.json --query_type vr --query_size 500
+python cifar/train_sameinit.py -f cifar/configs/cifar100_resnet18.json --query_type vr --query_size 500
 ```
 
 
