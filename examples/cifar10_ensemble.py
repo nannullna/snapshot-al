@@ -310,9 +310,9 @@ def main(config):
                 
                 if epoch % config.eval_every == 0:
                     model.eval()
-                    eval_acc = eval(model, pool.get_eval_dataloader(), device)
+                    eval_acc, _ = eval(model, pool.get_eval_dataloader(), device)
 
-                tbar.set_description(f"train loss {train_loss():.3f}, eval acc {eval_acc*100:.2f}")
+                tbar.set_description(f"train loss {train_loss:.3f}, eval acc {eval_acc*100:.2f}")
 
             ckpt_file = os.path.join(episode_save_path, f"member_{ens}.ckpt")
             torch.save({"state_dict": model.state_dict()}, ckpt_file)

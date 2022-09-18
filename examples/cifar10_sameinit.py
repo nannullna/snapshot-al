@@ -36,7 +36,7 @@ def create_and_parse_args() -> argparse.Namespace:
 
     parser.add_argument('-f', '--file', type=str, required=False)
 
-    parser.add_argument('--run_name',     type=str, default='cifar10-ensemble')
+    parser.add_argument('--run_name',     type=str, default='cifar10-sameinit')
     parser.add_argument('--project',      type=str, default='al_swa')
     parser.add_argument('--save_path',    type=str, default='saved/')
     parser.add_argument('--dataset_path', type=str, default='datasets/cifar10')
@@ -320,9 +320,9 @@ def main(config):
                 
                 if epoch % config.eval_every == 0:
                     model.eval()
-                    eval_acc = eval(model, pool.get_eval_dataloader(), device)
+                    eval_acc, _ = eval(model, pool.get_eval_dataloader(), device)
 
-                tbar.set_description(f"train loss {train_loss():.3f}, eval acc {eval_acc*100:.2f}")
+                tbar.set_description(f"train loss {train_loss:.3f}, eval acc {eval_acc*100:.2f}")
 
             ckpt_file = os.path.join(episode_save_path, f"member_{ens}.ckpt")
             torch.save({"state_dict": model.state_dict()}, ckpt_file)
