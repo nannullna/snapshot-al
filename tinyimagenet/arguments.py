@@ -5,7 +5,7 @@ from al.methods import ALL_METHODS
 def add_training_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     training_args = parser.add_argument_group('training')
 
-    training_args.add_argument('--learning_rate',      type=float, default=1e-3)
+    training_args.add_argument('--learning_rate',      type=float, default=5e-3)
     training_args.add_argument('--weight_decay',       type=float, default=1e-2)
     training_args.add_argument('--momentum',           type=float, default=0.9)
     training_args.add_argument('--batch_size',         type=int,   default=64)
@@ -42,7 +42,7 @@ def add_query_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     query_args.add_argument('--num_ensembles',   type=int, default=5)
     query_args.add_argument('--query_size',      type=int, default=1000)
     query_args.add_argument('--query_type',      type=str, default="random", choices=ALL_METHODS)
-    query_args.add_argument('--init_query_size', type=int, default=2000)
+    query_args.add_argument('--init_query_size', type=int, default=10000)
     query_args.add_argument('--init_query_type', type=str, default="random", choices=ALL_METHODS)
     query_args.add_argument('--eval_query_size', type=int, default=2000)
     query_args.add_argument('--eval_query_type', type=str, default="random", choices=ALL_METHODS)

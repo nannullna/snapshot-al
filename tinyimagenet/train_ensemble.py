@@ -139,7 +139,7 @@ def main(config):
         os.makedirs(episode_save_path)
 
         for ens in range(config.num_ensembles):
-            model, optimizer = init_model_and_optimizer(config, num_classes=10)
+            model, optimizer = init_model_and_optimizer(config)
             scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=False)))
 
             sampler.update_model(model) # this updates the reference to the model.
@@ -150,7 +150,7 @@ def main(config):
 
             for epoch in tbar:
                 model.train()
-                train_loss = train_epoch(model, pool.get_labeled_dataloader(), optimizer, scheduler, device)
+                train_loss = train_epoch(model, pool.get_labeled_dataloader(num_workers=4, pin_memory=True), optimizer, scheduler, device)
                 
                 if epoch % config.eval_every == 0:
                     model.eval()

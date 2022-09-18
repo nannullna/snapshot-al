@@ -174,7 +174,7 @@ def main(config):
         for epoch in tbar:
 
             model.train()
-            train_loss = train_epoch(model, pool.get_labeled_dataloader(drop_last=False), optimizer, scheduler if epoch < config.swa_start else None, device)
+            train_loss = train_epoch(model, pool.get_labeled_dataloader(drop_last=False, num_workers=4, pin_memory=True), optimizer, scheduler if epoch < config.swa_start else None, device)
 
             if epoch > config.swa_start:
                 swa_model.update_parameters(model)

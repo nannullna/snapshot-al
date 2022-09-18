@@ -3,7 +3,7 @@ from typing import Tuple, List, Dict, Any, Optional
 import os
 
 import numpy as np
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, top_k_accuracy_score
 
 import torch
 import torch.nn as nn
@@ -163,8 +163,9 @@ def calc_metrics(eval_results: Dict[str, torch.Tensor]) -> Dict[str, float]:
     acc_ = accuracy_score(targets_np, preds_np)
     nll_ = nll(probs_np, targets_np)
     ece_ = ece_loss(probs_np, targets_np, n_bins=10)
+    top5_ = top_k_accuracy_score(targets_np, probs_np, k=5)
 
-    return {"acc": float(acc_), "nll": float(nll_), "ece": float(ece_)}
+    return {"acc": float(acc_), "nll": float(nll_), "ece": float(ece_), "top5": top5_}
 
 
 @torch.no_grad()
