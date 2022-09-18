@@ -26,7 +26,7 @@ def add_swa_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     swa_args = parser.add_argument_group('swa')
 
     swa_args.add_argument('--swa_start',          type=int,   default=100)
-    swa_args.add_argument('--swa_anneal_epochs',  type=int,   default=50)
+    swa_args.add_argument('--swa_anneal_epochs',  type=int,   default=2)
     swa_args.add_argument('--swa_lr_multiplier',  type=float, default=10.0)
     swa_args.add_argument('--swa_scheduler_type', type=str,   default="constant",
         choices=["none", "constant", "cosine"])
@@ -40,11 +40,11 @@ def add_query_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     
     query_args.add_argument('--num_episodes',    type=int, default=30)
     query_args.add_argument('--num_ensembles',   type=int, default=5)
-    query_args.add_argument('--query_size',      type=int, default=500)
+    query_args.add_argument('--query_size',      type=int, default=1000)
     query_args.add_argument('--query_type',      type=str, default="random", choices=ALL_METHODS)
-    query_args.add_argument('--init_query_size', type=int, default=500)
+    query_args.add_argument('--init_query_size', type=int, default=2000)
     query_args.add_argument('--init_query_type', type=str, default="random", choices=ALL_METHODS)
-    query_args.add_argument('--eval_query_size', type=int, default=500)
+    query_args.add_argument('--eval_query_size', type=int, default=2000)
     query_args.add_argument('--eval_query_type', type=str, default="random", choices=ALL_METHODS)
 
     return parser

@@ -31,14 +31,13 @@ from commons import (
 
 
 def create_and_parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser("CIFAR-Snapshot")
+    parser = argparse.ArgumentParser("TinyImageNet-Snapshot")
 
     parser.add_argument('-f', '--file', type=str, required=False)
 
-    parser.add_argument('--run_name',     type=str, default='cifar-snapshot')
+    parser.add_argument('--run_name',     type=str, default='tinyimagenet-snapshot')
     parser.add_argument('--save_path',    type=str, default='saved/')
-    parser.add_argument('--dataset_name', type=str, default='cifar10', choices=['cifar10', 'cifar100'])
-    parser.add_argument('--dataset_path', type=str, default='datasets')
+    parser.add_argument('--dataset_path', type=str, default='datasets/tiny-imagenet-200')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--arch', type=str, default='resnet18', choices=["resnet18", "resnet50", "vgg16"])
 
@@ -162,7 +161,7 @@ def main(config):
         episode_save_path = os.path.join(config.save_path, f"episode_{episode}")
         os.makedirs(episode_save_path)
         
-        model, optimizer = init_model_and_optimizer(config, num_classes=10)
+        model, optimizer = init_model_and_optimizer(config)
         scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=False)))
         swa_model, swa_scheduler = create_swa_model_and_scheduler(config, model, optimizer, save_interval)
 

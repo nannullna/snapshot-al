@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Tuple, List, Dict, Any, Optional
 import os
 
@@ -12,81 +13,98 @@ from torch.optim.lr_scheduler import LambdaLR, OneCycleLR
 from torch.utils.data import DataLoader
 
 import torchvision.transforms as T
-from torchvision.datasets import CIFAR10, CIFAR100
+from torchvision.datasets import ImageFolder
 from torchvision.models import resnet18, resnet50, vgg16_bn
+
+from tqdm import tqdm
 
 from al import ActivePool
 from utils import Tracker
 from evaluate import ece_loss, nll
 
 
+def prepare_imagenet(dataset_path: str):
+
+    mean = [0.485, 0.456, 0.406]
+    std  = [0.229, 0.224, 0.225]
+    size = 224
+    
+    train_dir = os.path.join(dataset_path, 'train')
+    eval_dir  = os.path.join(dataset_path, 'val', 'images')
+
+    train_transform = T.Compose([
+        T.RandomHorizontalFlip(),
+        T.RandomResizedCrop(size),
+        T.ToTensor(),
+        T.Normalize(mean=mean, std=std)
+    ])
+    test_transform = T.Compose([
+        T.RandomHorizontalFlip(),
+        T.CenterCrop(size),
+        T.ToTensor(),
+        T.Normalize(mean=mean, std=std)
+    ])
+
+    create_eval_img_folder(dataset_path)
+
+    train_set = ImageFolder(train_dir, transform=train_transform)
+    query_set = ImageFolder(train_dir, transform=test_transform)
+    eval_set  = ImageFolder(eval_dir,  transform=test_transform)
+    
+    return {
+        'train': train_set,
+        'query': query_set,
+        'eval': eval_set,
+    }
+
+
+def create_eval_img_folder(dataset_path: str):
+
+    eval_dir = os.path.join(dataset_path, 'val')
+    img_dir  = os.path.join(eval_dir, 'images')
+
+    fp = open(os.path.join(eval_dir, 'val_annotations.txt'), 'r')
+    data = fp.readlines()
+    eval_img_dict = OrderedDict()
+    for line in tqdm(data):
+        words = line.split('\t')
+        eval_img_dict[words[0]] = words[1]
+    fp.close()
+
+    # Create folder if not present and move images into proper folders
+    for img, folder in tqdm(eval_img_dict.items()):
+        newpath = os.path.join(img_dir, folder)
+        if not os.path.exists(newpath):
+            os.makedirs(newpath)
+        if os.path.exists(os.path.join(img_dir, img)):
+            os.rename(os.path.join(img_dir, img), os.path.join(newpath, img))
+
+
+def get_class_name(config):
+    class_to_name = dict()
+    fp = open(os.path.join(config.dataset_path, 'words.txt'), 'r')
+    data = fp.readlines()
+    for line in data:
+        words = line.strip('\n').split('\t')
+        class_to_name[words[0]] = words[1].split(',')[0]
+    fp.close()
+    return class_to_name
+
+
 def create_active_pool(config) -> ActivePool:
-    
-    if config.dataset_name == 'cifar10':
-
-        mean = [0.4914, 0.4822, 0.4465]
-        std  = [0.2470, 0.2435, 0.2616]
-
-        train_transform = T.Compose([
-            T.RandomHorizontalFlip(), 
-            T.ToTensor(), 
-            T.Normalize(mean, std)
-        ])
-        test_transform  = T.Compose([
-            T.ToTensor(), 
-            T.Normalize(mean, std)
-        ])
-
-        train_set = CIFAR10(root=os.path.join(config.dataset_path, config.dataset_name), train=True,  download=True, transform=train_transform)
-        query_set = CIFAR10(root=os.path.join(config.dataset_path, config.dataset_name), train=True,  download=True, transform=test_transform)
-        test_set  = CIFAR10(root=os.path.join(config.dataset_path, config.dataset_name), train=False, download=True, transform=test_transform)
-
-    elif config.dataset_name == 'cifar100':
-
-        mean = [0.5071, 0.4865, 0.4409]
-        std  = [0.2673, 0.2564, 0.2762]
-
-        train_transform = T.Compose([
-            T.RandomHorizontalFlip(), 
-            T.ToTensor(), 
-            T.Normalize(mean, std)
-        ])
-        test_transform  = T.Compose([
-            T.ToTensor(), 
-            T.Normalize(mean, std)
-        ])
-
-        train_set = CIFAR100(root=os.path.join(config.dataset_path, config.dataset_name), train=True,  download=True, transform=train_transform)
-        query_set = CIFAR100(root=os.path.join(config.dataset_path, config.dataset_name), train=True,  download=True, transform=test_transform)
-        test_set  = CIFAR100(root=os.path.join(config.dataset_path, config.dataset_name), train=False, download=True, transform=test_transform)
-
-    pool = ActivePool(train_set=train_set, query_set=query_set, test_set=test_set, batch_size=config.batch_size)
-    
+    datasets = prepare_imagenet(config.dataset_path)
+    pool = ActivePool(train_set=datasets['train'], query_set=datasets['query'], test_set=datasets['eval'], batch_size=config.batch_size)
     return pool
 
 
-def init_model_and_optimizer(config, num_classes:int=10) -> Tuple[nn.Module, optim.Optimizer]:
+def init_model_and_optimizer(config, num_classes:int = 200) -> Tuple[nn.Module, optim.Optimizer]:
 
     if config.arch == "resnet18":
         model = resnet18(pretrained=False, num_classes=num_classes)
-        model.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
-        model.maxpool = nn.Identity()
     elif config.arch == "resnet50":
         model = resnet50(pretrained=False, num_classes=num_classes)
-        model.conv1 = nn.Conv2d(3, 64, 1, 1)
-        model.maxpool = nn.Identity()
     elif config.arch == "vgg16":
         model = vgg16_bn(pretrained=False)
-        model.avgpool = nn.Identity()
-        model.classifier = nn.Sequential(
-            nn.Dropout(0.5),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, num_classes)
-        )
     else:
         raise ValueError
         
