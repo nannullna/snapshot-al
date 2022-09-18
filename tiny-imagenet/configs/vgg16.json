@@ -1,0 +1,22 @@
+{
+  "save_path": "saved",
+  "dataset_name": "cifar10",
+  "dataset_path": "/opt/datasets",
+  "seed": 42,
+  "arch": "vgg16",
+  "learning_rate": 0.001,
+  "weight_decay": 0.01,
+  "momentum": 0.9,
+  "batch_size": 64,
+  "num_epochs": 200,
+  "optimizer_type": "sgd",
+  "lr_scheduler_type": "onecycle",
+  "lr_scheduler_param": 10.0,
+  "swa_start": 100,
+  "swa_anneal_epochs": 50,
+  "swa_lr_multiplier": 10.0,
+  "swa_scheduler_type": "constant",
+  "start_swa_at_end": true,
+  "num_episodes": 30,
+  "num_ensembles": 5
+}
