@@ -100,6 +100,9 @@ def main(config):
 
     episode_results = []
 
+    # If `--resume_from` is provided, then this program tries to gather all queried indices from the `--resume_from` path
+    # and starts the experiment with those labeled indices. 
+    # This is especially helpful when a program is stopped accidentally.
     if config.resume_from is None:
 
         eval_sampler = NAME_TO_CLS[config.eval_query_type](model=None, pool=pool, size=config.eval_query_size, device=device)
