@@ -40,7 +40,7 @@ def create_and_parse_args() -> argparse.Namespace:
     parser.add_argument('--dataset_name', type=str, default='cifar10', choices=['cifar10', 'cifar100', 'tiny'])
     parser.add_argument('--dataset_path', type=str, default='datasets')
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--arch', type=str, default='resnet18', choices=["resnet18", "resnet50", "vgg16"])
+    parser.add_argument('--arch', type=str, default='resnet18', choices=["resnet18", "resnet50", "vgg16", "densenet121"])
 
     parser.add_argument('--disable_tqdm', action='store_true')
     parser.add_argument('--resume_from', type=str, required=None, help='Resume AL from the saved path.')

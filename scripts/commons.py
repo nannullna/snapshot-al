@@ -137,10 +137,12 @@ def init_model(config) -> nn.Module:
         model = resnet18(pretrained=False, num_classes=num_classes)
         model.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
         model.maxpool = nn.Identity()
+
     elif config.arch == "resnet50":
         model = resnet50(pretrained=False, num_classes=num_classes)
         model.conv1 = nn.Conv2d(3, 64, 1, 1)
         model.maxpool = nn.Identity()
+
     elif config.arch == "vgg16":
         model = vgg16_bn(pretrained=False)
         model.avgpool = nn.Identity()
@@ -153,6 +155,10 @@ def init_model(config) -> nn.Module:
             nn.ReLU(),
             nn.Linear(512, num_classes)
         )
+
+    elif config.arch == "densenet121":
+        raise NotImplementedError 
+
     else:
         raise ValueError
     
