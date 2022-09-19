@@ -176,7 +176,7 @@ def main(config):
             "num_ensembles": len(checkpoints),
             "eval/acc": eval_acc,
             "eval/max_acc": max_acc,
-            "episode/indicies": queried_ids,
+            "episode/indices": queried_ids,
             "episode/scores": query_result.scores,
             "episode/num_labeled": len(pool.get_labeled_ids()),
         }

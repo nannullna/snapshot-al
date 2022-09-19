@@ -224,7 +224,7 @@ def main(config):
             "test/swa_nll": swa_results['nll'],
             "test/swa_ece": swa_results['ece'],
             "test/swa_top5": swa_results['top5'],
-            "episode/indicies": queried_ids,
+            "episode/indices": queried_ids,
             "episode/scores": query_result.scores,
             "episode/num_labeled": len(pool.get_labeled_ids()),
         }
