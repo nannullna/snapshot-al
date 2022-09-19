@@ -1,10 +1,10 @@
 {
   "save_path": "saved",
-  "dataset_name": "cifar100",
+  "dataset_name": "densenet121",
   "dataset_path": "/opt/datasets",
 
   "seed": 42,
-  "arch": "vgg16",
+  "arch": "densenet121",
   "batch_size": 64,
   "num_epochs": 200,
   "num_workers": 4,

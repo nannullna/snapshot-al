@@ -1,11 +1,11 @@
 {
   "save_path": "saved",
-  "dataset_name": "cifar100",
-  "dataset_path": "/opt/datasets",
+  "dataset_name": "tiny",
+  "dataset_path": "/opt/datasets/tiny-imagenet-200",
 
   "seed": 42,
-  "arch": "vgg16",
-  "batch_size": 64,
+  "arch": "densenet121",
+  "batch_size": 256,
   "num_epochs": 200,
   "num_workers": 4,
   
@@ -16,16 +16,16 @@
   "lr_scheduler_type": "onecycle",
   "lr_scheduler_param": 10.0,
   
-  "swa_start": 100,
-  "swa_anneal_epochs": 50,
+  "swa_start": 150,
+  "swa_anneal_epochs": 10,
   "swa_lr_multiplier": 10.0,
   "swa_scheduler_type": "constant",
   "start_swa_at_end": true,
   
-  "init_query_size": 500,
-  "query_size": 500,
-  "eval_size": 500,
-  
+  "init_query_size": 10000,
+  "query_size": 1000,
+  "eval_size": 1000,
+
   "num_episodes": 30,
   "num_ensembles": 5
 }
