@@ -30,6 +30,7 @@ python scripts/train_snapshot.py -f configs/cifar100_resnet18.json --query_type 
 python scripts/train_ensemble.py -f configs/cifar100_resnet18.json --query_type vr
 
 python scripts/train_sameinit.py -f configs/cifar100_resnet18.json --query_type vr
+```
 
 Run experiments on Tiny-ImageNet-200 dataset with ResNet-50. Specify an acquisition function with `--query_type` and acquisition size with `--query_size` argument.
 
