@@ -23,7 +23,7 @@ from utils import Tracker
 from evaluate import ece_loss, nll
 
 
-def prepare_imagenet(dataset_path: str):
+def prepare_tiny_imagenet(dataset_path: str):
 
     mean = [0.485, 0.456, 0.406]
     std  = [0.229, 0.224, 0.225]
@@ -90,7 +90,7 @@ def get_class_name(config):
 
 
 def create_active_pool(config) -> ActivePool:
-    datasets = prepare_imagenet(config.dataset_path)
+    datasets = prepare_tiny_imagenet(config.dataset_path)
     pool = ActivePool(train_set=datasets['train'], query_set=datasets['query'], test_set=datasets['eval'], batch_size=config.batch_size)
     return pool
 
@@ -175,7 +175,7 @@ def calc_metrics(eval_results: Dict[str, torch.Tensor]) -> Dict[str, float]:
     acc_ = accuracy_score(targets_np, preds_np)
     nll_ = nll(probs_np, targets_np)
     ece_ = ece_loss(probs_np, targets_np, n_bins=10)
-    top5_ = top_k_accuracy_score(targets_np, probs_np, k=5)
+    top5_ = top_k_accuracy_score(targets_np, probs_np, k=5, labels=np.arange(probs_np.shape[1]))
 
     return {"acc": float(acc_), "nll": float(nll_), "ece": float(ece_), "top5": top5_}
 
