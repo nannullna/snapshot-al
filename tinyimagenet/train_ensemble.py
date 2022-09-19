@@ -59,7 +59,7 @@ def create_scheduler(config, optimizer: optim.Optimizer, steps_per_epoch: int) -
             epochs=config.num_epochs,
             steps_per_epoch=steps_per_epoch,
         )
-    elif config.lr_scheduler_type == "none":
+    elif config.lr_scheduler_type in ["none", "constant"]:
         scheduler = LambdaLR(optimizer, lambda epoch: 1.0)
     else:
         raise ValueError

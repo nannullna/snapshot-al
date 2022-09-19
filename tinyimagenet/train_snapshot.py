@@ -61,7 +61,7 @@ def create_scheduler(config, optimizer: optim.Optimizer, steps_per_epoch: int) -
             epochs=config.num_epochs if not config.start_swa_at_end else config.swa_start,
             steps_per_epoch=steps_per_epoch,
         )
-    elif config.lr_scheduler_type == "none":
+    elif config.lr_scheduler_type in ["none", "constant"]:
         scheduler = LambdaLR(optimizer, lambda epoch: 1.0)
     else:
         raise ValueError
@@ -70,7 +70,7 @@ def create_scheduler(config, optimizer: optim.Optimizer, steps_per_epoch: int) -
 
 
 def create_swa_model_and_scheduler(config, model: nn.Module, optimizer: optim.Optimizer, save_interval: int) -> Tuple[AveragedModel, LambdaLR]:
-    swa_model = AveragedModel(model)
+    swa_model = AveragedModel(model, device='cpu')
 
     if config.swa_scheduler_type == "constant":
         swa_scheduler = SWALR(optimizer, swa_lr=config.learning_rate*config.swa_lr_multiplier, anneal_epochs=config.swa_anneal_epochs, anneal_strategy="cos")
