@@ -1,7 +1,6 @@
 {
-  "save_path": "saved",
   "dataset_name": "tiny",
-  "dataset_path": "/opt/datasets/tiny-imagenet-200",
+  "dataset_path": "datasets/tiny-imagenet-200",
 
   "arch": "densenet121",
   "batch_size": 256,

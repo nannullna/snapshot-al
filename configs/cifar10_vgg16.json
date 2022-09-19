@@ -1,7 +1,6 @@
 {
-  "save_path": "saved",
   "dataset_name": "cifar10",
-  "dataset_path": "/opt/datasets",
+  "dataset_path": "datasets",
 
   "arch": "vgg16",
   "batch_size": 64,
