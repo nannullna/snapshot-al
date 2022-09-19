@@ -1,4 +1,4 @@
-from typing import Any, Tuple, Dict, List, Optional
+from typing import Tuple, Dict, List, Optional
 import os
 import sys
 sys.path.append('.')
@@ -29,11 +29,11 @@ from commons import (
 
 def create_and_parse_args() -> argparse.Namespace:
 
-    parser = argparse.ArgumentParser("CIFAR-DE")
+    parser = argparse.ArgumentParser("CIFAR10-DE_sameinit")
 
     parser.add_argument('-f', '--file', type=str, required=False)
 
-    parser.add_argument('--run_name',     type=str, default='cifar-de')
+    parser.add_argument('--run_name',     type=str, default='cifar-de_sameinit')
     parser.add_argument('--save_path',    type=str, default='saved/')
     parser.add_argument('--dataset_name', type=str, default='cifar10', choices=['cifar10', 'cifar100'])
     parser.add_argument('--dataset_path', type=str, default='datasets')
@@ -74,7 +74,7 @@ def main(config):
     if not os.path.isdir(config.save_path):
         os.makedirs(config.save_path)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
 
     pool = create_active_pool(config)
 
@@ -139,7 +139,17 @@ def main(config):
         os.makedirs(episode_save_path)
 
         for ens in range(config.num_ensembles):
-            model, optimizer = init_model_and_optimizer(config)
+            if ens == 0:
+                model, optimizer = init_model_and_optimizer(config)
+                init_ckpt_file = os.path.join(config.save_path, f"episode{episode}_init.ckpt")
+                torch.save({"state_dict": model.state_dict(), "optimizer": optimizer.state_dict()}, init_ckpt_file)
+                print(f"Initial checkpoint saved to {init_ckpt_file}")
+            else:
+                ckpt = torch.load(init_ckpt_file)
+                msg = model.load_state_dict(ckpt['state_dict'], strict=True)
+                optimizer.load_state_dict(ckpt['optimizer'])
+                print(f"Checkpoint loaded from {init_ckpt_file} -- {msg}")
+            
             scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=False)))
 
             sampler.update_model(model) # this updates the reference to the model.
@@ -164,7 +174,7 @@ def main(config):
             checkpoints.append(ckpt_file)
         
         ens_metrics = test_ensemble(checkpoints, model, pool.get_test_dataloader(num_workers=config.num_workers, pin_memory=True), device)
-        print(f"Episode {episode} num_models: {len(checkpoints)} -- max eval acc: {max_acc*100:.2f}, test ens_acc: {ens_metrics['ens_acc']*100:.2f}, mean_acc: {ens_metrics['mean_acc']*100:.2f}")
+        print(f"Episode {episode} num_models: {len(checkpoints)} -- max eval acc: {max_acc*100:.2f}, test ens_acc: {ens_metrics['ens/acc']*100:.2f}, mean_acc: {ens_metrics['ens/mean_acc']*100:.2f}")
 
         query_result = sampler(checkpoints=checkpoints)
         queried_ids = pool.convert_to_original_ids(query_result.indices)
@@ -176,7 +186,7 @@ def main(config):
             "num_ensembles": len(checkpoints),
             "eval/acc": eval_acc,
             "eval/max_acc": max_acc,
-            "episode/indicies": queried_ids,
+            "episode/indices": queried_ids,
             "episode/scores": query_result.scores,
             "episode/num_labeled": len(pool.get_labeled_ids()),
         }

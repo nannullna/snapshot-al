@@ -35,12 +35,12 @@ def create_and_parse_args() -> argparse.Namespace:
 
     parser.add_argument('-f', '--file', type=str, required=False)
 
-    parser.add_argument('--run_name',     type=str, default='cifar-snapshot')
+    parser.add_argument('--run_name',     type=str, default='snapshot')
     parser.add_argument('--save_path',    type=str, default='saved/')
-    parser.add_argument('--dataset_name', type=str, default='cifar10', choices=['cifar10', 'cifar100'])
+    parser.add_argument('--dataset_name', type=str, default='cifar10', choices=['cifar10', 'cifar100', 'tiny'])
     parser.add_argument('--dataset_path', type=str, default='datasets')
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--arch', type=str, default='resnet18', choices=["resnet18", "resnet50", "vgg16"])
+    parser.add_argument('--arch', type=str, default='resnet18', choices=["resnet18", "resnet50", "vgg16", "densenet121"])
 
     parser.add_argument('--disable_tqdm', action='store_true')
     parser.add_argument('--resume_from', type=str, required=None, help='Resume AL from the saved path.')
@@ -100,6 +100,9 @@ def main(config):
 
     episode_results = []
 
+    # If `--resume_from` is provided, then this program tries to gather all queried indices from the `--resume_from` path
+    # and starts the experiment with those labeled indices. 
+    # This is especially helpful when a program is stopped accidentally.
     if config.resume_from is None:
 
         eval_sampler = NAME_TO_CLS[config.eval_query_type](model=None, pool=pool, size=config.eval_query_size, device=device)
@@ -205,7 +208,7 @@ def main(config):
         print(f"Episode {episode} num_models: {len(checkpoints)} -- max eval acc: {max_acc*100:.2f}, test acc: {swa_acc*100:.2f}")
 
         ens_metrics = test_ensemble(checkpoints, model, pool.get_test_dataloader(num_workers=config.num_workers, pin_memory=True), device)
-        print(f"ens acc: {ens_metrics['ens_acc']*100:.2f}, mean acc: {ens_metrics['mean_acc']*100:.2f}")
+        print(f"ens acc: {ens_metrics['ens/acc']*100:.2f}, mean acc: {ens_metrics['ens/mean_acc']*100:.2f}")
 
         query_result = sampler(checkpoints=checkpoints, swa_checkpoint=swa_ckpt_name)
         queried_ids  = pool.convert_to_original_ids(query_result.indices)
@@ -217,10 +220,11 @@ def main(config):
             "num_ensembles": len(checkpoints),
             "eval/acc": eval_acc,
             "eval/max_acc": max_acc,
-            "test/swa_acc": swa_acc,
+            "test/swa_acc": swa_results['acc'],
             "test/swa_nll": swa_results['nll'],
             "test/swa_ece": swa_results['ece'],
-            "episode/indicies": queried_ids,
+            "test/swa_top5": swa_results['top5'],
+            "episode/indices": queried_ids,
             "episode/scores": query_result.scores,
             "episode/num_labeled": len(pool.get_labeled_ids()),
         }
@@ -243,7 +247,7 @@ if __name__ == '__main__':
 
     print(vars(args))
 
-    args.run_name = f"{args.run_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    args.run_name = f"{args.dataset_name}_{args.run_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     args.save_path = os.path.join(args.save_path, args.run_name)
     if not os.path.isdir(args.save_path):
         os.makedirs(args.save_path)

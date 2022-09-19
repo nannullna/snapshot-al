@@ -164,7 +164,7 @@ def main(config):
             checkpoints.append(ckpt_file)
         
         ens_metrics = test_ensemble(checkpoints, model, pool.get_test_dataloader(num_workers=config.num_workers, pin_memory=True), device)
-        print(f"Episode {episode} num_models: {len(checkpoints)} -- max eval acc: {max_acc*100:.2f}, test ens_acc: {ens_metrics['ens_acc']*100:.2f}, mean_acc: {ens_metrics['mean_acc']*100:.2f}")
+        print(f"Episode {episode} num_models: {len(checkpoints)} -- max eval acc: {max_acc*100:.2f}, test ens_acc: {ens_metrics['ens/acc']*100:.2f}, mean_acc: {ens_metrics['ens/mean_acc']*100:.2f}")
 
         query_result = sampler(checkpoints=checkpoints)
         queried_ids = pool.convert_to_original_ids(query_result.indices)
@@ -176,7 +176,7 @@ def main(config):
             "num_ensembles": len(checkpoints),
             "eval/acc": eval_acc,
             "eval/max_acc": max_acc,
-            "episode/indicies": queried_ids,
+            "episode/indices": queried_ids,
             "episode/scores": query_result.scores,
             "episode/num_labeled": len(pool.get_labeled_ids()),
         }
