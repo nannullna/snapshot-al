@@ -3,7 +3,6 @@
   "dataset_name": "cifar100",
   "dataset_path": "/opt/datasets",
 
-  "seed": 42,
   "arch": "resnet18",
   "batch_size": 64,
   "num_epochs": 200,

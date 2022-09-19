@@ -3,7 +3,6 @@
   "dataset_name": "densenet121",
   "dataset_path": "/opt/datasets",
 
-  "seed": 42,
   "arch": "densenet121",
   "batch_size": 64,
   "num_epochs": 200,

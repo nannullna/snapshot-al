@@ -2,8 +2,7 @@
   "save_path": "saved",
   "dataset_name": "cifar10",
   "dataset_path": "/opt/datasets",
-
-  "seed": 42,
+  
   "arch": "densenet121",
   "batch_size": 64,
   "num_epochs": 200,
