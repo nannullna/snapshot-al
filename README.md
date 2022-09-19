@@ -47,14 +47,15 @@ python scripts/train_sameinit.py -f configs/tiny_resnet50.json --query_type vr
 
 CIFAR10 and CIFAR100 dataset will be downloaded using torchvision and saved to a directory provided as `--dataset_path`.
 
-However, for Tiny Imagenet, you will need to download it first, unzip it, and specify a directory.
+However, for Tiny Imagenet, you will need to download it first, unzip it, and specify a unzipped directory as `--dataset_path`. 
+
+Our code will automatically create a file structure for the validation set.
+
+Please edit config files according to your local setting before running the scripts. 
 
 ### 2-1-2. Edit Configs
 
 Configuration files are in `./cifar/configs` and `./tiny-imagenet/configs` folder. You can directly edit these files for different hyperparameters. 
-
-### 2-1-3. 
-
 
 
 ---
