@@ -9,6 +9,7 @@
   "momentum": 0.9,
   "batch_size": 64,
   "num_epochs": 200,
+  "num_workers": 8,
   "optimizer_type": "sgd",
   "lr_scheduler_type": "onecycle",
   "lr_scheduler_param": 10.0,
