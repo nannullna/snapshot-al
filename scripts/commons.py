@@ -219,6 +219,48 @@ def train_epoch(model: nn.Module, dataloader: DataLoader, optimizer: optim.Optim
 
     return train_loss.get()
 
+def train_epoch_regul(model: nn.Module, swa_model: nn.Module, dataloader: DataLoader, optimizer: optim.Optimizer, lr_scheduler: Optional[LambdaLR]=None, device: Optional[torch.device]=None, regul_mode=False, lamb: float=1e-2) -> float:
+
+    train_loss = Tracker("train_loss")
+    loss_fn = nn.CrossEntropyLoss()
+
+    if lr_scheduler is not None:
+        if isinstance(lr_scheduler, OneCycleLR):
+            lr_update_strategy = "step"
+        else:
+            lr_update_strategy = "epoch"
+    else:
+        lr_update_strategy = "none"
+
+    model.train()
+    for imgs, lbls in dataloader:
+
+        if device is not None:
+            imgs, lbls = imgs.to(device), lbls.to(device)
+        logits = model(imgs)
+        loss = loss_fn(logits, lbls)
+
+        if regul_mode:
+            swa_model.to(device)
+            swa_reg = torch.tensor(0.).to(device)
+            for p_swa, p_model in zip(swa_model.parameters(), model.parameters()):
+                swa_reg += torch.norm(p_model - p_swa)
+            loss += lamb * swa_reg
+
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        train_loss.update(loss.item(), imgs.size(0))
+
+        if lr_update_strategy == "step":
+            lr_scheduler.step()
+
+    if lr_update_strategy == "epoch":
+        lr_scheduler.step()
+
+    return train_loss.get()
+
 
 def calc_metrics(eval_results: Dict[str, torch.Tensor]) -> Dict[str, float]:
     probs_np = F.softmax(eval_results['logits'], dim=-1).numpy()
