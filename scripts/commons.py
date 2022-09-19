@@ -140,7 +140,7 @@ def init_model(config) -> nn.Module:
 
     elif config.arch == "resnet50":
         model = resnet50(pretrained=False, num_classes=num_classes)
-        model.conv1 = nn.Conv2d(3, 64, 1, 1)
+        model.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
         model.maxpool = nn.Identity()
 
     elif config.arch == "vgg16":
