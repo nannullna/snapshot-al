@@ -27,20 +27,18 @@ def prepare_imagenet(dataset_path: str):
 
     mean = [0.485, 0.456, 0.406]
     std  = [0.229, 0.224, 0.225]
-    size = 224
+    size = 64
     
     train_dir = os.path.join(dataset_path, 'train')
-    eval_dir  = os.path.join(dataset_path, 'val', 'images')
+    val_dir   = os.path.join(dataset_path, 'val')
 
     train_transform = T.Compose([
+        T.RandomCrop(size, 4),
         T.RandomHorizontalFlip(),
-        T.RandomResizedCrop(size),
         T.ToTensor(),
         T.Normalize(mean=mean, std=std)
     ])
     test_transform = T.Compose([
-        T.RandomHorizontalFlip(),
-        T.CenterCrop(size),
         T.ToTensor(),
         T.Normalize(mean=mean, std=std)
     ])
@@ -49,21 +47,21 @@ def prepare_imagenet(dataset_path: str):
 
     train_set = ImageFolder(train_dir, transform=train_transform)
     query_set = ImageFolder(train_dir, transform=test_transform)
-    eval_set  = ImageFolder(eval_dir,  transform=test_transform)
+    eval_set  = ImageFolder(val_dir,   transform=test_transform)
     
     return {
         'train': train_set,
         'query': query_set,
-        'eval': eval_set,
+        'eval':  eval_set,
     }
 
 
 def create_eval_img_folder(dataset_path: str):
 
-    eval_dir = os.path.join(dataset_path, 'val')
-    img_dir  = os.path.join(eval_dir, 'images')
+    val_dir = os.path.join(dataset_path, 'val')
+    img_dir = os.path.join(val_dir, 'images')
 
-    fp = open(os.path.join(eval_dir, 'val_annotations.txt'), 'r')
+    fp = open(os.path.join(val_dir, 'val_annotations.txt'), 'r')
     data = fp.readlines()
     eval_img_dict = OrderedDict()
     for line in tqdm(data):
@@ -101,10 +99,24 @@ def init_model_and_optimizer(config, num_classes:int = 200) -> Tuple[nn.Module, 
 
     if config.arch == "resnet18":
         model = resnet18(pretrained=False, num_classes=num_classes)
+        model.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
+        model.maxpool = nn.Identity()
     elif config.arch == "resnet50":
         model = resnet50(pretrained=False, num_classes=num_classes)
+        model.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
+        model.maxpool = nn.Identity()
     elif config.arch == "vgg16":
         model = vgg16_bn(pretrained=False)
+        model.avgpool = nn.Identity()
+        model.classifier = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512, num_classes)
+        )
     else:
         raise ValueError
         
@@ -134,7 +146,7 @@ def train_epoch(model: nn.Module, dataloader: DataLoader, optimizer: optim.Optim
         lr_update_strategy = "none"
 
     model.train()
-    for imgs, lbls in dataloader:
+    for imgs, lbls in tqdm(dataloader, leave=False):
 
         if device is not None:
             imgs, lbls = imgs.to(device), lbls.to(device)
@@ -186,7 +198,7 @@ def predict(model: nn.Module, dataloader: DataLoader, device: Optional[torch.dev
     all_logits  = []
     
     model.eval()
-    for imgs, lbls in dataloader:
+    for imgs, lbls in tqdm(dataloader, leave=False):
 
         if device is not None:
             imgs, lbls = imgs.to(device), lbls.to(device)
