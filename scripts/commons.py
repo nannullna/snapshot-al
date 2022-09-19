@@ -23,7 +23,13 @@ from utils import Tracker
 from evaluate import ece_loss, nll
 
 
+DISABLE_TQDM = False
+
+
 def create_active_pool(config) -> ActivePool:
+
+    global DISABLE_TQDM
+    DISABLE_TQDM = config.disable_tqdm
     
     if config.dataset_name == 'cifar10':
 
@@ -187,6 +193,8 @@ def init_model_and_optimizer(config) -> Tuple[nn.Module, optim.Optimizer]:
 
 def train_epoch(model: nn.Module, dataloader: DataLoader, optimizer: optim.Optimizer, lr_scheduler: Optional[LambdaLR]=None, device: Optional[torch.device]=None) -> float:
 
+    global DISABLE_TQDM
+
     train_loss = Tracker("train_loss")
     loss_fn = nn.CrossEntropyLoss()
 
@@ -199,7 +207,7 @@ def train_epoch(model: nn.Module, dataloader: DataLoader, optimizer: optim.Optim
         lr_update_strategy = "none"
 
     model.train()
-    for imgs, lbls in tqdm(dataloader, leave=False, desc='Train'):
+    for imgs, lbls in tqdm(dataloader, leave=False, desc='Train', disable=DISABLE_TQDM):
 
         if device is not None:
             imgs, lbls = imgs.to(device), lbls.to(device)
@@ -246,12 +254,15 @@ def eval(model: nn.Module, dataloader: DataLoader, device: Optional[torch.device
 
 @torch.no_grad()
 def predict(model: nn.Module, dataloader: DataLoader, device: Optional[torch.device]=None) -> Dict[str, torch.TensorType]:
+
+    global DISABLE_TQDM
+
     all_preds   = []
     all_targets = []
     all_logits  = []
     
     model.eval()
-    for imgs, lbls in tqdm(dataloader, leave=False, desc='Predict'):
+    for imgs, lbls in tqdm(dataloader, leave=False, desc='Predict', disable=DISABLE_TQDM):
 
         if device is not None:
             imgs, lbls = imgs.to(device), lbls.to(device)
