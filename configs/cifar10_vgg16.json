@@ -1,6 +1,6 @@
 {
   "dataset_name": "cifar10",
-  "dataset_path": "datasets",
+  "dataset_path": "/opt/datasets",
 
   "arch": "vgg16",
   "batch_size": 64,
@@ -11,7 +11,7 @@
   "learning_rate": 0.001,
   "momentum": 0.9,
   "weight_decay": 0.01,
-  "lr_scheduler_type": "onecycle",
+  "lr_scheduler_type": "constant",
   "lr_scheduler_param": 10.0,
   
   "swa_start": 100,
