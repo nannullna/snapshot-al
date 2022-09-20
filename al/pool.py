@@ -101,6 +101,7 @@ class ActivePool:
         self.eval_data      = Subset(self.eval_set,  eval_ids)
         self.unlabeled_data = Subset(self.query_set, unlabeled_ids)
         self.leftover_ids   = leftover_ids
+        self.active_data    = Subset(self.train_set, labeled_ids) 
 
     def __repr__(self):
         result = (
@@ -131,7 +132,8 @@ class ActivePool:
         if len(indices) + len(self.get_labeled_ids()) != len(labeled_ids):
             # sanity check!!!
             warnings.warn("Updated indices may contain duplicates from itself.")
-        
+
+        self.active_data.indices = indices
         self.labeled_data.indices   = labeled_ids
         self.unlabeled_data.indices = self.reverse_ids(self.get_labeled_ids() + self.get_eval_ids() + self.get_leftover_ids())
 
@@ -217,6 +219,15 @@ class ActivePool:
             dataset_ptr = self.labeled_data
         return DataLoader(dataset_ptr, batch_size=batch_size, shuffle=shuffle, **kwargs)
 
+    def get_active_dataloader(self, transform:Optional[Callable]=None, batch_size: Optional[int] = None, shuffle: bool = True, **kwargs):
+        batch_size = batch_size or self.batch_size
+        if transform is not None:
+            dataset_ptr = deepcopy(self.active_data)
+            dataset_ptr.dataset.transform = transform
+        else:
+            dataset_ptr = self.active_data
+        return DataLoader(dataset_ptr, batch_size=batch_size, shuffle=shuffle, **kwargs)
+
     def get_eval_dataloader(self, transform:Optional[Callable]=None, batch_size: Optional[int] = None, shuffle: bool = False, **kwargs):
         batch_size = batch_size or self.batch_size
         if transform is not None:
@@ -250,6 +261,10 @@ class ActivePool:
     def convert_to_original_ids(self, indices: Sequence[int]) -> List[int]:
         """Returns the original indices from the unlabeled pool for data visualization. Must be called before any modification to the indicies of the unlabeled pool is applied."""
         return [self.unlabeled_data.indices[idx] for idx in indices]
+
+    def convert_to_original_ids_labeled(self, indices: Sequence[int]) -> List[int]:
+        """Returns the original indices from the labeled pool for data visualization. Must be called before any modification to the indicies of the unlabeled pool is applied."""
+        return [self.labeled_data.indices[idx] for idx in indices]
 
     def get_unlabeled_pool(self) -> Subset:
         return self.unlabeled_data

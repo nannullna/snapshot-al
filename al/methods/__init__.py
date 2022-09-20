@@ -1,4 +1,4 @@
-from .random import RandomSampling
+from .random import RandomSampling, LabeledRandomSampling
 from .batchbald import EnsembleBatchBALD
 from .vr import EnsembleVariationRatio
 from .entropy import EnsembleEntropy
