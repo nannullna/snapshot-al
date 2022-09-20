@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 
 import torchvision.transforms as T
 from torchvision.datasets import CIFAR10, CIFAR100, ImageFolder
-from torchvision.models import resnet18, resnet50, vgg16_bn
+from torchvision.models import resnet18, resnet50, vgg16_bn, densenet121
 
 from tqdm import tqdm
 
@@ -163,7 +163,9 @@ def init_model(config) -> nn.Module:
         )
 
     elif config.arch == "densenet121":
-        raise NotImplementedError 
+        model = densenet121(pretrained=False, num_classes=num_classes)
+        model.conv0 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
+        model.pool0 = nn.Identity()
 
     else:
         raise ValueError
