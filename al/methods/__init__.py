@@ -11,6 +11,10 @@ from .greedyvr import EnsembleGreedyVR
 from .stconal import EnsembleStConal
 from .maxentropy import EnsembleMaxEntropy
 
+from .mcbald import MCBald
+from .mcentropy import MCEntropy
+from .mcvr import MCVariationRatio
+
 NAME_TO_CLS = {
     "random": RandomSampling,
     "ensvr": EnsembleVariationRatio,
@@ -21,7 +25,10 @@ NAME_TO_CLS = {
     "ensstconal": EnsembleStConal,
     "ensmaxentropy": EnsembleMaxEntropy,
     "lc": LeastConfidentSampling,
-    "entropy": EntropySampling
+    "entropy": EntropySampling,
+    "mcbald": MCBald,
+    "mcmaxentropy": MCEntropy,
+    "mcvr": MCVariationRatio
 }
 
 ALL_METHODS = list(NAME_TO_CLS.keys())
