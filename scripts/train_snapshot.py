@@ -166,7 +166,7 @@ def main(config):
         os.makedirs(episode_save_path)
         
         model, optimizer = init_model_and_optimizer(config)
-        scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=False)))
+        scheduler = create_scheduler(config, optimizer, len(pool.get_labeled_dataloader(drop_last=True)))
         swa_model, swa_scheduler = create_swa_model_and_scheduler(config, model, optimizer, save_interval)
 
         sampler.update_model(model) # this updates the reference to the model.
@@ -178,7 +178,7 @@ def main(config):
         for epoch in tbar:
 
             model.train()
-            train_loss = train_epoch(model, pool.get_labeled_dataloader(num_workers=config.num_workers, pin_memory=True), optimizer, scheduler if epoch < config.swa_start else None, device)
+            train_loss = train_epoch(model, pool.get_labeled_dataloader(drop_last=True, num_workers=config.num_workers, pin_memory=True), optimizer, scheduler if epoch < config.swa_start else None, device)
 
             if epoch > config.swa_start:
                 swa_model.update_parameters(model)
@@ -189,6 +189,15 @@ def main(config):
                     torch.save({"state_dict": model.state_dict()}, ckpt_file_name)
                     checkpoints.append(ckpt_file_name)
 
+            elif epoch == config.swa_start:
+                eval_results = eval(model, pool.get_test_dataloader(num_workers=config.num_workers, pin_memory=True), device)
+                print(f"Before SWA {eval_results['acc']:.3f} {eval_results['nll']:.3f} {eval_results['ece']:.3f}")
+                before_swa_metrics = {
+                    'before/acc': eval_results['acc'],
+                    'before/nll': eval_results['nll'],
+                    'before/ece': eval_results['ece']
+                }
+
             if epoch % config.eval_every == 0:
                 model.eval()
                 eval_results = eval(model, pool.get_eval_dataloader(num_workers=config.num_workers, pin_memory=True), device)
@@ -198,7 +207,7 @@ def main(config):
                 tbar.set_description(f"train loss {train_loss:.3f}, eval acc {eval_acc*100:.2f}")
 
         swa_model.to(device)
-        update_bn(pool.get_labeled_dataloader(num_workers=config.num_workers, pin_memory=True), swa_model, device)
+        update_bn(pool.get_labeled_dataloader(drop_last=False, num_workers=config.num_workers, pin_memory=True), swa_model, device)
         swa_ckpt_name = os.path.join(episode_save_path, f"swa_model.ckpt")
         torch.save({"state_dict": swa_model.state_dict()}, swa_ckpt_name)
 
@@ -229,6 +238,7 @@ def main(config):
             "episode/num_labeled": len(pool.get_labeled_ids()),
         }
         metrics.update(ens_metrics)
+        metrics.update(before_swa_metrics)
         
         write_json(metrics, os.path.join(episode_save_path, f"result.json"))
         episode_results.append(metrics)
