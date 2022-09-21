@@ -176,7 +176,7 @@ def init_model(config) -> nn.Module:
 def init_optimizer(config, model: nn.Module) -> optim.Optimizer:
         
     if config.optimizer_type == "sgd":
-        optimizer = optim.SGD(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay, momentum=config.momentum)
+        optimizer = optim.SGD(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay, momentum=config.momentum, nesterov=True)
     elif config.optimizer_type == "adam":
         optimizer = optim.Adam(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
     elif config.optimizer_type == "adamw":
