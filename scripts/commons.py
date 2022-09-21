@@ -149,6 +149,24 @@ def init_model(config) -> nn.Module:
         model.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
         model.maxpool = nn.Identity()
 
+    elif config.arch == "resnet18_mc":
+        model = resnet18(pretrained=False, num_classes=num_classes)
+        model.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
+        model.maxpool = nn.Identity()
+        model.fc = nn.Sequential(
+            nn.Dropout(p=0.5),
+            model.fc
+        )
+
+    elif config.arch == "resnet50_mc":
+        model = resnet50(pretrained=False, num_classes=num_classes)
+        model.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
+        model.maxpool = nn.Identity()
+        model.fc = nn.Sequential(
+            nn.Dropout(p=0.5),
+            model.fc
+        )
+
     elif config.arch == "vgg16":
         model = vgg16_bn(pretrained=False)
         model.avgpool = nn.Identity()
