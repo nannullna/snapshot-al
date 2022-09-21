@@ -31,11 +31,11 @@ from commons import (
 
 
 def create_and_parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser("CIFAR-Snapshot")
+    parser = argparse.ArgumentParser("AL-Single")
 
     parser.add_argument('-f', '--file', type=str, required=False)
 
-    parser.add_argument('--run_name',     type=str, default='snapshot')
+    parser.add_argument('--run_name',     type=str, default='single')
     parser.add_argument('--save_path',    type=str, default='saved/')
     parser.add_argument('--dataset_name', type=str, default='cifar10', choices=['cifar10', 'cifar100', 'tiny'])
     parser.add_argument('--dataset_path', type=str, default='datasets')
@@ -163,6 +163,8 @@ def main(config):
                     max_acc = eval_acc
                 tbar.set_description(f"train loss {train_loss:.3f}, eval acc {eval_acc*100:.2f}")
 
+        test_metrics = eval(model, pool.get_test_dataloader(num_workers=config.num_workers, pin_memory=True), device)
+
         query_result = sampler()
         queried_ids  = pool.convert_to_original_ids(query_result.indices)
         write_json(queried_ids, os.path.join(episode_save_path, f"queried_ids.json"))
@@ -172,6 +174,10 @@ def main(config):
             "episode": episode,
             "eval/acc": eval_acc,
             "eval/max_acc": max_acc,
+            "test/acc": test_metrics['acc'],
+            "test/top5": test_metrics['top5'],
+            "test/nll": test_metrics['nll'],
+            "test/ece": test_metrics['ece'],
             "episode/indices": queried_ids,
             "episode/scores": query_result.scores,
             "episode/num_labeled": len(pool.get_labeled_ids()),
