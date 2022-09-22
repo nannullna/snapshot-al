@@ -273,7 +273,12 @@ def train_epoch_regul(model: nn.Module, swa_model: nn.Module, dataloader: DataLo
 
 
 def calc_metrics(eval_results: Dict[str, torch.Tensor]) -> Dict[str, float]:
-    probs_np = F.softmax(eval_results['logits'], dim=-1).numpy()
+
+    if 'probs' in eval_results:
+        probs_np = eval_results['probs'].numpy()
+    else:
+        probs_np = F.softmax(eval_results['logits'], dim=-1).numpy()
+    
     targets_np = eval_results['targets'].numpy()
     preds_np = eval_results['preds'].numpy()
 
@@ -344,11 +349,13 @@ def test_ensemble(checkpoints: List[str], model: nn.Module, dataloader: DataLoad
         all_logits.append(eval_results['logits'].detach().cpu().unsqueeze(1))
     print()
 
-    all_logits = torch.cat(all_logits, dim=1)
-    ens_logits = torch.mean(all_logits, dim=1)
-    ens_preds  = torch.argmax(ens_logits, dim=-1)
+    all_logits = torch.cat(all_logits, dim=1)    # [N, K, C]
+    all_probs  = F.softmax(all_logits, dim=-1)   # [N, K, C]
+    ens_logits = torch.mean(all_logits, dim=1)   # [N, C]
+    ens_probs  = torch.mean(all_probs, dim=1)    # [N, C]
+    ens_preds  = torch.argmax(ens_probs, dim=-1) # [N, ]
 
-    ens_results = {'logits': ens_logits, 'targets': eval_results['targets'], 'preds': ens_preds}
+    ens_results = {'logits': ens_logits, 'probs': ens_probs, 'targets': eval_results['targets'], 'preds': ens_preds}
     ens_metrics = calc_metrics(ens_results)
     ens_metrics = {f"ens/{k}": v for k, v in ens_metrics.items()}
     ens_metrics['ens/mean_acc'] = float(np.mean(accs))
