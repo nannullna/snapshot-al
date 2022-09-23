@@ -31,7 +31,7 @@ from commons import (
 
 
 def create_and_parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser("CIFAR-Snapshot")
+    parser = argparse.ArgumentParser("Snapshot")
 
     parser.add_argument('-f', '--file', type=str, required=False)
 
