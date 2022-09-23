@@ -1,6 +1,6 @@
-# SWAL: Stochastic Weight Active Learning
+# A Simple yet Powerful Deep Active Learning with Snapshots Ensembles
 
-Official Implementation of Stochastic Weight Active Learning
+Official Implementation of the paper "A Simple yet Powerful Deep Active Learning with Snapshots Ensembles"
 
 ---
 
