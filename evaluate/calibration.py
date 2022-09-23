@@ -1,6 +1,9 @@
 from typing import Dict, Union
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
+import torch.nn.functional as F
+from scipy.optimize import minimize
 
 def ece_loss(probs: np.ndarray, targets: np.ndarray, n_bins: int=10, return_dict=False):
 
@@ -41,6 +44,32 @@ def nll(y_hat: np.ndarray, y_true: np.ndarray) -> float:
     nll = -np.log(prob, where=prob > 0.0).mean()
     
     return nll
+
+
+def get_optimal_temperature(confidences: np.ndarray,
+                            targets: np.ndarray) -> float:
+    """
+    Args:
+        confidences (np.ndarray): a tensor of shape [N, C] of predicted confidences.
+        true_labels (np.ndarray): a tensor of shape [N,] of ground truth labels.
+    
+    Returns:
+        optimal_temperature (float): optimal value of temperature for given predictions.
+    """
+    def obj(t: float):
+        return -np.log(
+            1e-12 + np.exp(
+                F.log_softmax(
+                    np.log(confidences, where=confidences>0.0) / t, dim=1
+                ).data.numpy()
+            )[np.arange(len(targets)), targets]
+        ).mean()
+
+    optimal_temperature = minimize(
+        obj, 1.0, method="nelder-mead", options={"xtol": 1e-3}
+    ).x[0]
+
+    return optimal_temperature
 
 
 def draw_ece_plot(probs, targets, n_bins: int=10, figsize=(3, 3), dpi=150) -> plt.Figure:

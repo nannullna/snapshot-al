@@ -17,3 +17,9 @@ def kld(p: np.ndarray, q: np.ndarray, log_p: bool=False) -> np.ndarray:
 def symmetric_kld(p: np.ndarray, q: np.ndarray, log_p: bool=False) -> np.ndarray:
     """Measures symmetric kl-divergence between p and q."""
     return 0.5 * (kld(p, q, log_p) + kld(q, p, log_p))
+
+
+def disagreement(p: np.ndarray, q: np.ndarray) -> float:
+    pred_p = np.argmax(p, axis=-1)
+    pred_q = np.argmax(q, axis=-1)
+    return 1 - (pred_p == pred_q).float().mean()
