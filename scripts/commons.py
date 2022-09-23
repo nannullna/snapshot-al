@@ -62,6 +62,7 @@ def create_active_pool(config) -> ActivePool:
         root = os.path.join(config.dataset_path, config.dataset_name)
 
         train_transform = T.Compose([
+            T.RandomCrop(32, 4),
             T.RandomHorizontalFlip(), 
             T.ToTensor(), 
             T.Normalize(mean, std)
