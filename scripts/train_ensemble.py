@@ -29,16 +29,16 @@ from commons import (
 
 def create_and_parse_args() -> argparse.Namespace:
 
-    parser = argparse.ArgumentParser("CIFAR-DE")
+    parser = argparse.ArgumentParser("DE")
 
     parser.add_argument('-f', '--file', type=str, required=False)
 
-    parser.add_argument('--run_name',     type=str, default='cifar-de')
+    parser.add_argument('--run_name',     type=str, default='ensemble')
     parser.add_argument('--save_path',    type=str, default='saved/')
-    parser.add_argument('--dataset_name', type=str, default='cifar10', choices=['cifar10', 'cifar100'])
+    parser.add_argument('--dataset_name', type=str, default='cifar10', choices=['cifar10', 'cifar100', 'tiny'])
     parser.add_argument('--dataset_path', type=str, default='datasets')
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--arch', type=str, default="resnet18", choices=["resnet18", "resnet50", "vgg16"])
+    parser.add_argument('--arch', type=str, default="resnet18", choices=["resnet18", "resnet50", "vgg16", "densenet121"])
     
     parser.add_argument('--disable_tqdm', action='store_true')
     parser.add_argument('--resume_from', type=str, required=None, help='Resume AL from the saved path.')
@@ -199,7 +199,7 @@ if __name__ == '__main__':
 
     print(vars(args))
 
-    args.run_name = f"{args.run_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    args.run_name = f"{args.dataset_name}_{args.run_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     args.save_path = os.path.join(args.save_path, args.run_name)
     if not os.path.isdir(args.save_path):
         os.makedirs(args.save_path)
