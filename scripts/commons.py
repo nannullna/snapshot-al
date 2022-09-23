@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import LambdaLR, OneCycleLR
 from torch.utils.data import DataLoader
+from torch.cuda.amp import autocast, GradScaler
 
 import torchvision.transforms as T
 from torchvision.datasets import CIFAR10, CIFAR100, ImageFolder
@@ -24,12 +25,15 @@ from evaluate import ece_loss, nll
 
 
 DISABLE_TQDM = False
+USE_FP16 = False
 
 
 def create_active_pool(config) -> ActivePool:
 
     global DISABLE_TQDM
+    global USE_FP16
     DISABLE_TQDM = config.disable_tqdm
+    USE_FP16 = config.use_fp16
     
     if config.dataset_name == 'cifar10':
 
@@ -207,16 +211,27 @@ def train_epoch(model: nn.Module, dataloader: DataLoader, optimizer: optim.Optim
             lr_update_strategy = "epoch"
     else:
         lr_update_strategy = "none"
+        
+    scaler = GradScaler()
 
     model.train()
     for imgs, lbls in tqdm(dataloader, leave=False, desc='Train', disable=DISABLE_TQDM):
 
         if device is not None:
             imgs, lbls = imgs.to(device), lbls.to(device)
-        logits = model(imgs)
-        loss = loss_fn(logits, lbls)
-        loss.backward()
-        optimizer.step()
+        
+        with autocast(enabled=USE_FP16):
+            logits = model(imgs)
+            loss = loss_fn(logits, lbls)
+            
+        if USE_FP16:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            optimizer.step()
+        
         optimizer.zero_grad()
 
         train_loss.update(loss.item(), imgs.size(0))
