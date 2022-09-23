@@ -16,6 +16,7 @@ def add_training_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParse
         choices=["none", "onecycle", "exponential", "cosine"])
     training_args.add_argument('--lr_scheduler_param', type=float, default=10.0)
     training_args.add_argument('--num_workers',        type=int, default=1)
+    training_args.add_argument('--use_fp16',   action='store_true')
 
     training_args.add_argument('--log_every',  type=float, default=10)
     training_args.add_argument('--eval_every', type=float, default=10)
