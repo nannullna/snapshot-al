@@ -14,6 +14,7 @@ class MCDropoutQuery(ActiveQuery):
     def __init__(self, model: nn.Module, pool: ActivePool, size: int = 1, device: torch.device = None, num_samples: int=5, **kwargs):
         super().__init__(model, pool, size, device, **kwargs)
         self.K = num_samples
+        self.num_classes = None
 
 
     def classify(self, x: torch.Tensor) -> torch.Tensor:
@@ -48,6 +49,8 @@ class MCDropoutQuery(ActiveQuery):
                     X = X.to(self.device)
                     # self.classify() will handle turning MC-Dropout on.
                     out = self.classify(X) # possibly, [B, C]
+                    if self.num_classes is None:
+                        self.num_classes = out.size(1)
                     batch_outs.append(out.unsqueeze(1)) # possibly, [B, 1, C]
                 
                 batch_outs = torch.cat(batch_outs, dim=1) # [B, K, C]
