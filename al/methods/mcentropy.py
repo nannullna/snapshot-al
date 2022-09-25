@@ -16,4 +16,4 @@ class MCEntropy(MCDropoutQuery):
     def _query_impl(self, batch_outs: torch.Tensor) -> List[float]:
         log_prob = F.log_softmax(batch_outs, dim=-1)  # [B, K, C]
         score = MCBald.calc_entropy(log_prob)
-        return score
+        return score.cpu().tolist()

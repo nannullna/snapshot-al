@@ -16,4 +16,4 @@ class MCVariationRatio(MCDropoutQuery):
     def _query_impl(self, batch_outs: torch.Tensor) -> List[float]:
         all_preds = torch.argmax(batch_outs, dim=-1).cpu().numpy() # [B, K]
         score = EnsembleVariationRatio.calc_variation_ratio(all_preds, self.num_classes)
-        return score
+        return score.tolist()
