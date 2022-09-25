@@ -15,6 +15,7 @@ class MCDropoutQuery(ActiveQuery):
         super().__init__(model, pool, size=size, device=device, **kwargs)
         self.K = num_samples
         self.num_classes = None
+        self.descending = True
 
 
     def classify(self, x: torch.Tensor) -> torch.Tensor:
