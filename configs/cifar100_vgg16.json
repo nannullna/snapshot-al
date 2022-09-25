@@ -4,7 +4,7 @@
 
   "arch": "vgg16",
   "batch_size": 64,
-  "num_epochs": 200,
+  "num_epochs": 250,
   "num_workers": 4,
   
   "optimizer_type": "sgd",
@@ -14,16 +14,16 @@
   "lr_scheduler_type": "onecycle",
   "lr_scheduler_param": 10.0,
   
-  "swa_start": 100,
+  "swa_start": 200,
   "swa_anneal_epochs": 50,
-  "swa_lr_multiplier": 10.0,
+  "swa_lr_multiplier": 5.0,
   "swa_scheduler_type": "constant",
   "start_swa_at_end": true,
   
-  "init_query_size": 500,
-  "query_size": 500,
-  "eval_size": 500,
+  "init_query_size": 5000,
+  "eval_query_size": 1000,
+  "query_size": 1000,
   
-  "num_episodes": 30,
+  "num_episodes": 11,
   "num_ensembles": 5
 }

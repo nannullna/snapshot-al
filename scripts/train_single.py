@@ -134,7 +134,7 @@ def main(config):
 
         print(pool)
     
-    sampler = NAME_TO_CLS[config.query_type](model=None, pool=pool, size=config.query_size, device=device)
+    sampler = NAME_TO_CLS[config.query_type](model=None, pool=pool, size=config.query_size, device=device, num_samples=config.num_ensembles)
 
     for episode in range(last_episode+1, config.num_episodes+1):
 
@@ -169,6 +169,7 @@ def main(config):
         queried_ids  = pool.convert_to_original_ids(query_result.indices)
         write_json(queried_ids, os.path.join(episode_save_path, f"queried_ids.json"))
         pool.update(query_result)
+        print(pool)
 
         metrics = {
             "episode": episode,
