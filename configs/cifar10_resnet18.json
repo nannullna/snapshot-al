@@ -21,8 +21,8 @@
   "start_swa_at_end": true,
   
   "init_query_size": 500,
+  "eval_query_size": 500,
   "query_size": 500,
-  "eval_size": 500,
   
   "num_episodes": 30,
   "num_ensembles": 5

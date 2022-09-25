@@ -20,9 +20,9 @@
   "swa_scheduler_type": "constant",
   "start_swa_at_end": true,
   
-  "init_query_size": 500,
-  "query_size": 500,
-  "eval_size": 500,
+  "init_query_size": 5000,
+  "eval_query_size": 1000,
+  "query_size": 1000,
   
   "num_episodes": 30,
   "num_ensembles": 5

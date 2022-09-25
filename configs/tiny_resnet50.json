@@ -1,10 +1,10 @@
 {
   "dataset_name": "tiny",
-  "dataset_path": "datasets/tiny-imagenet-200",
+  "dataset_path": "tiny-imagenet-200",
 
   "arch": "resnet50",
   "batch_size": 256,
-  "num_epochs": 200,
+  "num_epochs": 350,
   "num_workers": 8,
   
   "optimizer_type": "sgd",
@@ -14,15 +14,15 @@
   "lr_scheduler_type": "onecycle",
   "lr_scheduler_param": 10.0,
   
-  "swa_start": 150,
+  "swa_start": 300,
   "swa_anneal_epochs": 10,
-  "swa_lr_multiplier": 10.0,
+  "swa_lr_multiplier": 5.0,
   "swa_scheduler_type": "constant",
   "start_swa_at_end": true,
   
   "init_query_size": 10000,
+  "eval_query_size": 1000,
   "query_size": 1000,
-  "eval_size": 1000,
   
   "num_episodes": 20,
   "num_ensembles": 5
