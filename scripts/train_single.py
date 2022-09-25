@@ -169,6 +169,7 @@ def main(config):
         queried_ids  = pool.convert_to_original_ids(query_result.indices)
         write_json(queried_ids, os.path.join(episode_save_path, f"queried_ids.json"))
         pool.update(query_result)
+        print(pool)
 
         metrics = {
             "episode": episode,
