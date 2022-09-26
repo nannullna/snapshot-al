@@ -13,7 +13,7 @@ def add_training_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParse
     training_args.add_argument('--optimizer_type',     type=str,   default="sgd", 
         choices=["sgd", "adam", "adamw"])
     training_args.add_argument('--lr_scheduler_type',  type=str,   default="none", 
-        choices=["none", "onecycle", "exponential", "cosine"])
+        choices=["none", "onecycle", "exponential", "cosine", "step"])
     training_args.add_argument('--lr_scheduler_param', type=float, default=10.0)
     training_args.add_argument('--num_workers',        type=int, default=1)
     training_args.add_argument('--use_fp16',   action='store_true')

@@ -14,7 +14,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import OneCycleLR, LambdaLR, CosineAnnealingWarmRestarts
+from torch.optim.lr_scheduler import OneCycleLR, LambdaLR, MultiStepLR, CosineAnnealingWarmRestarts
 from torch.optim.swa_utils import AveragedModel, SWALR, update_bn
 
 from tqdm import trange
@@ -64,6 +64,10 @@ def create_scheduler(config, optimizer: optim.Optimizer, steps_per_epoch: int) -
         )
     elif config.lr_scheduler_type in ["none", "constant"]:
         scheduler = LambdaLR(optimizer, lambda epoch: 1.0)
+    elif config.lr_scheduler_type == "step":
+        first_milestone  = int(config.swa_start * 0.5)
+        second_milestone = int(config.swa_start * 0.75)
+        scheduler = MultiStepLR(optimizer, milestones=[first_milestone, second_milestone], gamma=config.lr_scheduler_param)
     else:
         raise ValueError
 
