@@ -152,7 +152,7 @@ def main(config):
 
         print(pool)
     
-    sampler = NAME_TO_CLS[config.query_type](model=None, pool=pool, size=config.query_size, device=device)
+    sampler = NAME_TO_CLS[config.query_type](model=None, pool=pool, size=config.query_size, device=device, max_size=config.query_max_size)
 
     save_interval = (config.num_epochs - config.swa_start) // config.num_ensembles
     save_at = [config.num_epochs - i*save_interval for i in range(config.num_ensembles)][::-1]
@@ -207,7 +207,7 @@ def main(config):
                 tbar.set_description(f"train loss {train_loss:.3f}, eval acc {eval_acc*100:.2f}")
 
         swa_model.to(device)
-        update_bn(pool.get_labeled_dataloader(drop_last=False, num_workers=config.num_workers, pin_memory=True), swa_model, device)
+        update_bn(pool.get_labeled_dataloader(batch_size=64, drop_last=False, num_workers=config.num_workers, pin_memory=True), swa_model, device)
         swa_ckpt_name = os.path.join(episode_save_path, f"swa_model.ckpt")
         torch.save({"state_dict": swa_model.state_dict()}, swa_ckpt_name)
 

@@ -48,5 +48,6 @@ def add_query_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     query_args.add_argument('--init_query_type', type=str, default="random", choices=ALL_METHODS)
     query_args.add_argument('--eval_query_size', type=int, default=500)
     query_args.add_argument('--eval_query_type', type=str, default="random", choices=ALL_METHODS)
+    query_args.add_argument('--query_max_size',  type=int, help="Use a random subsample to reduce computational cost if provided.")
 
     return parser
