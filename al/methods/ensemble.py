@@ -50,7 +50,7 @@ class EnsembleQuery(ActiveQuery):
             if (self.max_size is not None) and (self.max_size > 0):
                 random_ids = np.random.choice(np.arange(len(self.pool.get_unlabeled_ids())), size=self.max_size, replace=False).tolist()
                 random_subset = Subset(self.pool.get_unlabeled_dataset(), indices=random_ids)
-                dataloader = DataLoader(random_subset, batch_size=self.pool.batch_size, shuffle=False, **kwargs)
+                dataloader = DataLoader(random_subset, batch_size=self.pool.batch_size, shuffle=False)
             else:
                 dataloader = self.pool.get_unlabeled_dataloader()
 
