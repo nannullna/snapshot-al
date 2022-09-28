@@ -129,7 +129,7 @@ def main(config):
 
         print(pool)
     
-    sampler = NAME_TO_CLS[config.query_type](model=None, pool=pool, size=config.query_size, device=device)
+    sampler = NAME_TO_CLS[config.query_type](model=None, pool=pool, size=config.query_size, device=device, max_size=config.query_max_size)
 
     for episode in range(last_episode+1, config.num_episodes+1):
 

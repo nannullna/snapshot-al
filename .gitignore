@@ -1,3 +1,7 @@
 __pycache__/
 datasets/
 saved/
+empirical/
+
+*.zip
+*.npy
