@@ -5,6 +5,7 @@ tiny-imagenet-200
 tiny-processed/
 retrain/
 empirical/
+tiny-imagenet-200/
 
 *.zip
 *.npy
