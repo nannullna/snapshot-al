@@ -205,10 +205,11 @@ def init_model(config) -> nn.Module:
             nn.Linear(512, num_classes)
         )
 
-    elif config.arch == "densenet121":
-        model = densenet121(pretrained=False, num_classes=num_classes)
-        model.conv0 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
-        model.pool0 = nn.Identity()
+    elif config.arch == "vit":
+        import timm
+
+        model = timm.create_model('vit_base_patch16_224', pretrained=True)
+        model.head = nn.Linear(model.head.in_features, num_classes)
 
     else:
         raise ValueError

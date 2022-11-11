@@ -2,6 +2,7 @@ __pycache__/
 datasets/
 saved/
 empirical/
+tiny-imagenet-200/
 
 *.zip
 *.npy

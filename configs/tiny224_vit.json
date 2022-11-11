@@ -2,7 +2,7 @@
   "dataset_name": "tiny_224",
   "dataset_path": "tiny-imagenet-200",
 
-  "arch": "resnet50_pretrained",
+  "arch": "vit",
   "batch_size": 128,
   "num_epochs": 75,
   "num_workers": 8,
@@ -11,11 +11,11 @@
   "learning_rate": 0.001,
   "momentum": 0.9,
   "weight_decay": 0.0001,
-  "lr_scheduler_type": "onecycle",
+  "lr_scheduler_type": "none",
   "lr_scheduler_param": 10.0,
   
   "swa_start": 50,
-  "swa_anneal_epochs": 5,
+  "swa_anneal_epochs": 10,
   "swa_lr_multiplier": 50.0,
   "swa_scheduler_type": "constant",
   "start_swa_at_end": true,
