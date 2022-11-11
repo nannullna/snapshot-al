@@ -4,3 +4,7 @@ saved/
 tiny-imagenet-200
 tiny-processed/
 retrain/
+empirical/
+
+*.zip
+*.npy

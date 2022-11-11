@@ -3,7 +3,7 @@ from .lc import LeastConfidentSampling
 from .entropy import EntropySampling
 
 from .batchbald import EnsembleBatchBALD
-from .vr import EnsembleVariationRatio
+from .ensvr import EnsembleVariationRatio
 from .ensvoteentropy import EnsembleEntropy
 from .ensbald import EnsembleBALD
 from .batchbald import EnsembleBatchBALD

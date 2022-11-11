@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 from ..query import ActiveQuery, QueryResult, ActivePool
 from .mcdropout import MCDropoutQuery
-from .vr import EnsembleVariationRatio
+from .ensvr import EnsembleVariationRatio
 
 
 class MCVariationRatio(MCDropoutQuery):

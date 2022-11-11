@@ -30,10 +30,13 @@ USE_FP16 = False
 
 def create_active_pool(config) -> ActivePool:
 
-    # global DISABLE_TQDM
-    # global USE_FP16
-    # DISABLE_TQDM = config.disable_tqdm
-    # USE_FP16 = config.use_fp16
+    # TODO: need refactoring!!
+    global DISABLE_TQDM
+    global USE_FP16
+    if hasattr(config, 'disable_tqdm'):
+        DISABLE_TQDM = config.disable_tqdm
+    if hasattr(config, 'use_fp16'):
+        USE_FP16 = config.use_fp16
     
     if config.dataset_name == 'cifar10':
 
@@ -76,7 +79,7 @@ def create_active_pool(config) -> ActivePool:
         query_set = CIFAR100(root=root, train=True,  download=True, transform=test_transform)
         test_set  = CIFAR100(root=root, train=False, download=True, transform=test_transform)
 
-    elif config.dataset_name == 'tiny':
+    elif config.dataset_name in ['tiny', 'tiny_224']:
 
         def create_eval_img_folder(dataset_path: str):
 
@@ -101,22 +104,35 @@ def create_active_pool(config) -> ActivePool:
 
         mean = [0.485, 0.456, 0.406]
         std  = [0.229, 0.224, 0.225]
-        size = 64
+        size = 64 if config.dataset_name == 'tiny' else 224
         
         train_dir = os.path.join(config.dataset_path, 'train')
         val_dir   = os.path.join(config.dataset_path, 'val', 'images')
 
         # de-facto standard augmentations for tiny-imagenet in literature
-        train_transform = T.Compose([
-            T.RandomCrop(size, 4),
-            T.RandomHorizontalFlip(),
-            T.ToTensor(),
-            T.Normalize(mean=mean, std=std)
-        ])
-        test_transform = T.Compose([
-            T.ToTensor(),
-            T.Normalize(mean=mean, std=std)
-        ])
+        if size == 64:
+            train_transform = T.Compose([
+                T.RandomCrop(size, 4),
+                T.RandomHorizontalFlip(),
+                T.ToTensor(),
+                T.Normalize(mean=mean, std=std)
+            ])
+            test_transform = T.Compose([
+                T.ToTensor(),
+                T.Normalize(mean=mean, std=std)
+            ])
+        elif size == 224:
+            train_transform = T.Compose([
+                T.Resize(size),
+                T.RandomHorizontalFlip(),
+                T.ToTensor(),
+                T.Normalize(mean=mean, std=std)
+            ])
+            test_transform = T.Compose([
+                T.Resize(size),
+                T.ToTensor(),
+                T.Normalize(mean=mean, std=std)
+            ])
 
         create_eval_img_folder(config.dataset_path)
 
@@ -139,7 +155,7 @@ def init_model(config) -> nn.Module:
         num_classes = 10
     elif config.dataset_name == 'cifar100':
         num_classes = 100
-    elif config.dataset_name == 'tiny':
+    elif config.dataset_name in ['tiny', 'tiny_224']:
         num_classes = 200
     else:
         raise NotImplementedError
@@ -153,6 +169,10 @@ def init_model(config) -> nn.Module:
         model = resnet50(pretrained=False, num_classes=num_classes)
         model.conv1 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
         model.maxpool = nn.Identity()
+
+    elif config.arch == "resnet50_pretrained":
+        model = resnet50(pretrained=True)
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
 
     elif config.arch == "resnet18_mc":
         model = resnet18(pretrained=False, num_classes=num_classes)
