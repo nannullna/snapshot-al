@@ -1,6 +1,9 @@
 __pycache__/
 datasets/
 saved/
+tiny-imagenet-200
+tiny-processed/
+retrain/
 empirical/
 
 *.zip

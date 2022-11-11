@@ -62,7 +62,7 @@ def create_active_pool(config) -> ActivePool:
 
         mean = [0.5071, 0.4865, 0.4409]
         std  = [0.2673, 0.2564, 0.2762]
-        root = os.path.join(config.dataset_path, config.dataset_name)
+        root = os.path.join(config.dataset_path)
 
         train_transform = T.Compose([
             T.RandomCrop(32, 4),
