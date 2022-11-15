@@ -9,11 +9,13 @@ from .ensbald import EnsembleBALD
 from .batchbald import EnsembleBatchBALD
 from .greedyvr import EnsembleGreedyVR
 from .stconal import EnsembleStConal
-from .maxentropy import EnsembleMaxEntropy
+from .ensmaxentropy import EnsembleMaxEntropy
+from .ensmar import EnsembleMarginSampling
 
 from .mcbald import MCBald
 from .mcentropy import MCEntropy
 from .mcvr import MCVariationRatio
+from .mcmar import MCMarginSampling
 
 NAME_TO_CLS = {
     "random": RandomSampling,
@@ -24,11 +26,13 @@ NAME_TO_CLS = {
     "ensgreedyvr": EnsembleGreedyVR,
     "ensstconal": EnsembleStConal,
     "ensmaxentropy": EnsembleMaxEntropy,
+    "ensmar": EnsembleMarginSampling,
     "lc": LeastConfidentSampling,
     "entropy": EntropySampling,
     "mcbald": MCBald,
     "mcmaxentropy": MCEntropy,
-    "mcvr": MCVariationRatio
+    "mcvr": MCVariationRatio,
+    "mcmar": MCMarginSampling
 }
 
 ALL_METHODS = list(NAME_TO_CLS.keys())
