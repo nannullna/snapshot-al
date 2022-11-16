@@ -1,0 +1,30 @@
+{
+  "dataset_name": "cinic10",
+  "dataset_path": "/mnt/gsai/Datasets",
+
+  "arch": "resnet18",
+  "batch_size": 64,
+  "num_epochs": 250,
+  "num_workers": 4,
+  
+  "optimizer_type": "sgd",
+  "learning_rate": 0.001,
+  "momentum": 0.9,
+  "weight_decay": 0.01,
+  "lr_scheduler_type": "onecycle",
+  "lr_scheduler_param": 10.0,
+  
+  "swa_start": 200,
+  "swa_anneal_epochs": 50,
+  "swa_lr_multiplier": 10.0,
+  "swa_scheduler_type": "constant",
+  "start_swa_at_end": true,
+  
+  "init_query_size": 500,
+  "eval_query_size": 500,
+  "query_size": 500,
+  "query_max_size": 10000,
+  
+  "num_episodes": 30,
+  "num_ensembles": 5
+}
