@@ -79,6 +79,26 @@ def create_active_pool(config) -> ActivePool:
         query_set = CIFAR100(root=root, train=True,  download=True, transform=test_transform)
         test_set  = CIFAR100(root=root, train=False, download=True, transform=test_transform)
 
+    elif config.dataset_name == 'cinic10':
+
+        mean = [0.47889522, 0.47227842, 0.43047404]
+        std  = [0.24205776, 0.23828046, 0.25874835]
+        root = os.path.join(config.dataset_path, config.dataset_name)
+
+        train_transform = T.Compose([
+            T.RandomCrop(32, 4),
+            T.RandomHorizontalFlip(),
+            T.ToTensor(),
+            T.Normalize(mean, std)
+        ])
+        test_transform  = T.Compose([
+            T.ToTensor(),
+            T.Normalize(mean, std)
+        ])
+        train_set = ImageFolder(root=os.path.join(root, 'train'), transform=train_transform)
+        query_set = ImageFolder(root=os.path.join(root, 'train'), transform=test_transform)
+        test_set  = ImageFolder(root=os.path.join(root, 'test'),  transform=test_transform)
+
     elif config.dataset_name in ['tiny', 'tiny_224']:
 
         def create_eval_img_folder(dataset_path: str):
@@ -151,7 +171,7 @@ def create_active_pool(config) -> ActivePool:
 
 def init_model(config) -> nn.Module:
 
-    if config.dataset_name == 'cifar10':
+    if config.dataset_name in ['cifar10', 'cinic10']:
         num_classes = 10
     elif config.dataset_name == 'cifar100':
         num_classes = 100
