@@ -14,7 +14,7 @@ class EnsembleMarginSampling(EnsembleQuery):
 
     def __init__(self, model: nn.Module, pool: ActivePool, size: int = 1, device: torch.device = None, **kwargs):
         super().__init__(model, pool, size, device, **kwargs)
-        self.descending = True
+        self.descending = False
 
     @staticmethod
     def calc_margin(all_probs: np.ndarray) -> np.ndarray:
