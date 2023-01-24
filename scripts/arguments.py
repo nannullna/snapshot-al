@@ -18,21 +18,24 @@ def add_training_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParse
     training_args.add_argument('--num_workers',        type=int, default=1)
     training_args.add_argument('--use_fp16',   action='store_true')
 
-    training_args.add_argument('--log_every',  type=float, default=10)
-    training_args.add_argument('--eval_every', type=float, default=10)
+    training_args.add_argument('--log_every',  type=int, default=10)
+    training_args.add_argument('--eval_every', type=int, default=10)
 
     return parser
 
 
-def add_swa_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    swa_args = parser.add_argument_group('swa')
+def add_snapshot_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    snapshot_args = parser.add_argument_group('snapshot')
 
-    swa_args.add_argument('--swa_start',          type=int,   default=100)
-    swa_args.add_argument('--swa_anneal_epochs',  type=int,   default=50)
-    swa_args.add_argument('--swa_lr_multiplier',  type=float, default=10.0)
-    swa_args.add_argument('--swa_scheduler_type', type=str,   default="constant",
+    snapshot_args.add_argument('--snapshot_start',          type=int,   default=100)
+    snapshot_args.add_argument('--snapshot_anneal_epochs',  type=int,   default=50)
+    snapshot_args.add_argument('--snapshot_lr_multiplier',  type=float, default=10.0)
+    snapshot_args.add_argument('--snapshot_scheduler_type', type=str,   default="constant",
         choices=["none", "constant", "cosine"])
-    swa_args.add_argument('--start_swa_at_end', action='store_true')
+    snapshot_args.add_argument('--start_snapshot_at_end', action='store_true')
+    
+    snapshot_args.add_argument('--ft_epochs',         type=int, default=50)
+    snapshot_args.add_argument('--ft_snapshot_start', type=int, default=45)
 
     return parser
 

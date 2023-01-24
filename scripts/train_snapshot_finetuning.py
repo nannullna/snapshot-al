@@ -31,7 +31,7 @@ from commons import (
 
 
 def create_and_parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser("CIFAR-Snapshot")
+    parser = argparse.ArgumentParser("CIFAR-Snapshot with FT")
 
     parser.add_argument('-f', '--file', type=str, required=False)
 
@@ -49,7 +49,7 @@ def create_and_parse_args() -> argparse.Namespace:
     parser.add_argument('--lamb', type=float, required=None, default=1e-2)
 
     parser = add_training_args(parser)
-    parser = add_swa_args(parser)
+    parser = add_snapshot_args(parser)
     parser = add_query_args(parser)
 
     args = parser.parse_args()
@@ -62,7 +62,7 @@ def create_scheduler(config, optimizer: optim.Optimizer, steps_per_epoch: int) -
         scheduler = OneCycleLR(
             optimizer,
             config.learning_rate*config.lr_scheduler_param,
-            epochs=config.num_epochs if not config.start_swa_at_end else config.swa_start,
+            epochs=config.num_epochs if not config.start_snapshot_at_end else config.snapshot_start,
             steps_per_epoch=steps_per_epoch,
         )
     elif config.lr_scheduler_type in ["none", "constant"]:
@@ -77,10 +77,13 @@ def create_swa_model_and_scheduler(config, model: nn.Module, optimizer: optim.Op
     swa_model = AveragedModel(model)
 
     if config.swa_scheduler_type == "constant":
-        swa_scheduler = SWALR(optimizer, swa_lr=config.learning_rate*config.swa_lr_multiplier, anneal_epochs=config.swa_anneal_epochs, anneal_strategy="cos")
+        swa_scheduler = SWALR(
+            optimizer, swa_lr=config.learning_rate*config.snapshot_lr_multiplier, 
+            anneal_epochs=config.snapshot_anneal_epochs, anneal_strategy="cos"
+        )
     elif config.swa_scheduler_type == "cosine":
         swa_scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=save_interval, T_mult=1, eta_min=1e-5)
-        swa_scheduler.base_lrs = [config.swa_lr_multiplier*config.learning_rate \
+        swa_scheduler.base_lrs = [config.snapshot_lr_multiplier*config.learning_rate \
             for base_lr in swa_scheduler.base_lrs]
     elif config.swa_scheduler_tyhpe == "none":
         swa_scheduler = LambdaLR(optimizer, lambda epoch: 1)
@@ -154,7 +157,7 @@ def main(config):
     
     sampler = NAME_TO_CLS[config.query_type](model=None, pool=pool, size=config.query_size, device=device)
 
-    num_epochs, swa_start = config.num_epochs, config.swa_start
+    num_epochs_, snapshot_start_ = config.num_epochs, config.snapshot_start
     model = init_model(config)
     for episode in range(last_episode+1, config.num_episodes+1):
 
@@ -167,8 +170,8 @@ def main(config):
             print("============ Start from scratch ============")
             model, optimizer = init_model_and_optimizer(config)
 
-            config.num_epochs = num_epochs
-            config.swa_start = swa_start
+            config.num_epochs = num_epochs_
+            config.snapshot_start = snapshot_start_
 
             dataloader = pool.get_labeled_dataloader(drop_last=True)
 
@@ -176,12 +179,12 @@ def main(config):
             print("============ Fine tuning ============")
             optimizer = init_optimizer(config, model)
 
-            config.num_epochs = 50
-            config.swa_start = 40
+            config.num_epochs = config.ft_epochs
+            config.snapshot_start = config.ft_snapshot_start
 
             dataloader = pool.get_active_dataloader(drop_last=True)
 
-        save_interval = (config.num_epochs - config.swa_start) // config.num_ensembles
+        save_interval = (config.num_epochs - config.snapshot_start) // config.num_ensembles
         save_at = [config.num_epochs - i*save_interval for i in range(config.num_ensembles)][::-1]
         print(f"Total of {len(save_at)} models expected at {save_at}.")
 
@@ -201,7 +204,7 @@ def main(config):
             model.train()
             train_loss = train_epoch_regul(model, swa_model, dataloader, optimizer, scheduler if epoch <= config.swa_start else None, device, regul_mode, config.lamb)
 
-            if epoch > config.swa_start:
+            if epoch > config.snapshot_start:
                 regul_mode = config.regul
                 swa_model.update_parameters(model)
                 swa_scheduler.step()

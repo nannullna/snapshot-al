@@ -46,7 +46,7 @@ def create_and_parse_args() -> argparse.Namespace:
     parser.add_argument('--resume_from', type=str, required=None, help='Resume AL from the saved path.')
 
     parser = add_training_args(parser)
-    parser = add_swa_args(parser)
+    parser = add_snapshot_args(parser)
     parser = add_query_args(parser)
 
     args = parser.parse_args()
@@ -59,14 +59,14 @@ def create_scheduler(config, optimizer: optim.Optimizer, steps_per_epoch: int) -
         scheduler = OneCycleLR(
             optimizer,
             config.learning_rate*config.lr_scheduler_param,
-            epochs=config.num_epochs if not config.start_swa_at_end else config.swa_start,
+            epochs=config.num_epochs if not config.start_snapshot_at_end else config.snapshot_start,
             steps_per_epoch=steps_per_epoch,
         )
     elif config.lr_scheduler_type in ["none", "constant"]:
         scheduler = LambdaLR(optimizer, lambda epoch: 1.0)
     elif config.lr_scheduler_type == "step":
-        first_milestone  = int(config.swa_start * 0.5)
-        second_milestone = int(config.swa_start * 0.75)
+        first_milestone  = int(config.snapshot_start * 0.5)
+        second_milestone = int(config.snapshot_start * 0.75)
         scheduler = MultiStepLR(optimizer, milestones=[first_milestone, second_milestone], gamma=config.lr_scheduler_param)
     else:
         raise ValueError
@@ -78,10 +78,13 @@ def create_swa_model_and_scheduler(config, model: nn.Module, optimizer: optim.Op
     swa_model = AveragedModel(model)
 
     if config.swa_scheduler_type == "constant":
-        swa_scheduler = SWALR(optimizer, swa_lr=config.learning_rate*config.swa_lr_multiplier, anneal_epochs=config.swa_anneal_epochs, anneal_strategy="cos")
+        swa_scheduler = SWALR(
+            optimizer, swa_lr=config.learning_rate*config.snapshot_lr_multiplier, 
+            anneal_epochs=config.snapshot_anneal_epochs, anneal_strategy="cos"
+        )
     elif config.swa_scheduler_type == "cosine":
         swa_scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=save_interval, T_mult=1, eta_min=1e-5)
-        swa_scheduler.base_lrs = [config.swa_lr_multiplier*config.learning_rate \
+        swa_scheduler.base_lrs = [config.snapshot_lr_multiplier*config.learning_rate \
             for base_lr in swa_scheduler.base_lrs]
     elif config.swa_scheduler_tyhpe == "none":
         swa_scheduler = LambdaLR(optimizer, lambda epoch: 1)
@@ -158,7 +161,7 @@ def main(config):
     
     sampler = NAME_TO_CLS[config.query_type](model=None, pool=pool, size=config.query_size, device=device, max_size=config.query_max_size)
 
-    save_interval = (config.num_epochs - config.swa_start) // config.num_ensembles
+    save_interval = (config.num_epochs - config.snapshot_start) // config.num_ensembles
     save_at = [config.num_epochs - i*save_interval for i in range(config.num_ensembles)][::-1]
     print(f"Total of {len(save_at)} models expected at {save_at}.")
 
